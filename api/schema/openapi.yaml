@@ -1741,6 +1741,7 @@ paths:
     get:
       tags: [Audit Log]
       summary: List audit log entries.
+      description: Content edits record content.updated with previousStatus and status. Entering or leaving published status through an edit additionally records content.published or content.unpublished. Hide and restore record content.hidden and content.restored with both statuses, and hide retains its reason. Actor, target, timestamp and trusted request IP identify successful changes. Repeated or rejected visibility requests do not record successful changes; historical entries are not backfilled.
       x-permission: canViewAuditLog
       parameters:
         - name: action
@@ -2287,7 +2288,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List staff-authored content revisions.
-      description: Returns up to 100 public-field revisions for an event, retirement message, Last Post notice, comment, or news story. Submitter contact details are excluded. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
+      description: Returns up to 100 public-field revisions plus an opaque current-content version. Each revision includes canRevert, revertReason, and optionally revertedRevisionId and revertState (applied, pending, conflict, failed). Older records without revertState are applied. Pending/failed/conflicted attempts are not completed changes; a pending attempt disables further reverts until reviewed. Submitter contact details are excluded. News stories require canManageNews; all other types require canReviewAndPublish.
       x-permission: canReviewAndPublish or canManageNews (newsArticle only)
       parameters:
         - name: contentType
@@ -2310,12 +2311,115 @@ paths:
       responses:
         "200":
           description: Content revisions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revisions, version]
+                properties:
+                  version:
+                    type: string
+                    nullable: true
+                    description: Opaque version token required by revert; null for unversioned legacy content.
+                  revisions:
+                    type: array
+                    items:
+                      type: object
+                      required: [canRevert, revertReason]
+                      properties:
+                        canRevert: { type: boolean }
+                        revertReason: { type: string }
+                        revertedRevisionId: { type: string, nullable: true }
+                        revertState: { type: string, enum: [applied, pending, conflict, failed] }
         "400":
+          $ref: "#/components/responses/Error"
+        "401":
           $ref: "#/components/responses/Error"
         "403":
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/admin/content/{contentType}/{contentId}/revisions/{revisionId}/revert:
+    post:
+      tags: [Admin, Content]
+      operationId: revertContentRevision
+      summary: Revert a supported recorded plain-text change.
+      description: >-
+        Requires canManageNews for newsArticle and canReviewAndPublish for all other types.
+        Accepts only the current version token, never replacement content. All changed fields
+        must be supported and every recorded snapshot field must still match. Supported text
+        is event title/location/description/registration, retirement and Last Post message/messages,
+        news title/content, and comment body. Only changed language paths are restored.
+        Event status must be pending/published/hidden; notices allow draft/pending/published/hidden;
+        news allows draft/published/hidden; comments allow all existing states.
+        Formatting, blocks, status, media, metadata and personal-data changes cannot be reverted.
+        Body changes with active formattedBody or newsletter blocks require the editor.
+        Publication/contact fields are preserved. Uses an atomic version compare-and-swap
+        and durable pending reverse-revision/audit records before writing content, without
+        requiring MongoDB transactions. Successful attempts finalize as staff_content_reverted
+        (with revertedRevisionId) and content.reverted with before/after data. Failed finalization
+        returns 503 with revisionId and contentChanged (true, false, or null if the write outcome
+        is uncertain). Reload history and review pending records before retrying; never assume
+        a 503 means the content was unchanged.
+      x-permission: canReviewAndPublish or canManageNews (newsArticle only)
+      parameters:
+        - name: contentType
+          in: path
+          required: true
+          schema: { type: string, enum: [event, retirementMessage, lastPost, newsArticle, comment] }
+        - name: contentId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: revisionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version]
+              properties:
+                version: { type: string, pattern: '^[a-f0-9]{64}$' }
+      responses:
+        "200":
+          description: Content restored and reverse revision/audit finalized.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, revisionId, version]
+                properties:
+                  message: { type: string }
+                  revisionId: { type: string }
+                  version: { type: string }
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          description: Stale version, changed/missing/unsupported snapshot, pending prior revert, invalid restored text, or disallowed current status. Content was not reverted.
+        "500":
+          description: Could not persist the required journal; no content write was attempted.
+        "503":
+          description: Revert outcome or history finalization needs review. Reload history before retrying.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, revisionId, contentChanged]
+                properties:
+                  error: { type: string }
+                  revisionId: { type: string }
+                  contentChanged: { type: boolean, nullable: true }
   /api/admin/events/{eventId}:
     patch:
       tags: [Admin, Events]
@@ -3365,7 +3469,7 @@ paths:
     post:
       tags: [Events]
       summary: Submit event.
-      description: Submitter details are copied from the authenticated user's profile. Descriptions and registration instructions are limited to 10,000 characters per language.
+      description: Submitter rank, first name, last name, and email are required and copied from the authenticated user's profile. Unit/organization is optional; currentUnit or company is copied when present. createdBy always links to the authenticated account and cannot be supplied by the caller. Descriptions and registration instructions are limited to 10,000 characters per language.
       x-permission: canCreateDrafts
       requestBody:
         $ref: "#/components/requestBodies/Event"
@@ -3900,7 +4004,7 @@ paths:
     post:
       tags: [Retirements]
       summary: Submit retirement message.
-      description: Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`. An optional complete `certificateRequest` also creates a separate pending certificate-request record associated with the retirement message. When `MAIL_TO_BRANCH` is configured, the server emails the normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
+      description: Submitter first name, last name, and email are required and copied from the authenticated profile; the request supplies only `submitter.relationship`. Unit/organization is optional; currentUnit or company is copied when present. createdBy always links to the authenticated account and cannot be supplied by the caller. An optional complete `certificateRequest` also creates a separate pending certificate-request record associated with the retirement message. When `MAIL_TO_BRANCH` is configured, the server emails the normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
       x-permission: canSubmitRetirementMessages
       requestBody:
         $ref: "#/components/requestBodies/RetirementMessage"
@@ -4050,7 +4154,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update retirement message.
-      description: Updates retirement content while preserving the original submitter contact record and any existing text in the other language; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`. An optional complete `certificateRequest` creates a separate pending certificate-request record associated with the retirement message. submitForReview=true requires ownership, an editable unscheduled state, and publishNow=false or omitted; staff overrides are unavailable and stale approved states return 409.
+      description: Updates retirement content while preserving the original submitter account link, optional unit/organization snapshot, and any existing text in the other language; missing required legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`. An optional complete `certificateRequest` creates a separate pending certificate-request record associated with the retirement message. submitForReview=true requires ownership, an editable unscheduled state, and publishNow=false or omitted; staff overrides are unavailable and stale approved states return 409.
       parameters:
         - $ref: "#/components/parameters/MessageId"
       requestBody:

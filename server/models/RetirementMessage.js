@@ -137,9 +137,9 @@ const retirementMessageSchema = new mongoose.Schema(
 
       unit: {
         type: String,
-        required: requiresSubmissionMetadata,
         trim: true,
         maxlength: 160,
+        default: '',
       },
     },
 

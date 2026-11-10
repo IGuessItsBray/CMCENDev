@@ -67,6 +67,7 @@ function setup({ api: override, logs = [record()] } = {}) {
   };
   document.getElementById = () => root;
   const window = {
+    ContentDiff: require('../public/content-diff'),
     translate: (key, values) => key + (values ? JSON.stringify(values) : ''),
     CMCENUtils: { formatDate: (value) => value },
   };
@@ -133,6 +134,15 @@ function setup({ api: override, logs = [record()] } = {}) {
   };
 }
 
+test('snapshot pairs show changed words instead of duplicate full-text metadata chips', async () => {
+  const page = setup({ logs: [record({ previousValues: { en: 'The red fox', fr: 'Le renard' }, newValues: { en: 'The blue fox', fr: 'Le renard' }, source: 'editor' })] });
+  await page.controller.ready;
+  assert.deepEqual(page.root.querySelectorAll('del').map((node) => node.textContent), ['red']);
+  assert.deepEqual(page.root.querySelectorAll('ins').map((node) => node.textContent), ['blue']);
+  assert.deepEqual(page.root.querySelectorAll('pre').map((node) => node.textContent), ['The red fox', 'The blue fox']);
+  assert(!page.root.querySelectorAll('span').some((node) => ['previousValues', 'newValues'].includes(node.dataset.metadataKey)));
+});
+
 test('all filters survive refresh and the CSV request uses the same selected values', async () => {
   const page = setup();
   await page.controller.ready;
@@ -165,6 +175,34 @@ test('all filters survive refresh and the CSV request uses the same selected val
   assert.equal(user.value, ' Example ');
   await page.button('admin_next_audit_clear').fire('click');
   assert.equal(page.calls.at(-1).url, '/api/audit-logs');
+});
+
+test('staff edits and visibility events can be filtered for articles and Last Post notices', async () => {
+  const page = setup();
+  await page.controller.ready;
+  for (const action of ['content.updated', 'content.admin_updated',
+    'content.review_content_updated', 'content.article_review_updated',
+    'content.editorial_note_updated', 'content.published', 'content.unpublished',
+    'content.hidden', 'content.restored']) {
+    assert.ok(page.field('action').querySelectorAll('option').some((option) => option.value === action));
+    for (const targetType of ['newsArticle', 'lastPost']) {
+      assert.ok(page.field('targetType').querySelectorAll('option').some((option) => option.value === targetType));
+      await page.set('action', action);
+      await page.set('targetType', targetType);
+      await page.submit();
+      const query = new URLSearchParams(page.calls.at(-1).url.split('?')[1]);
+      assert.equal(query.get('action'), action);
+      assert.equal(query.get('targetType'), targetType);
+    }
+  }
+  const translations = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/translations.json'), 'utf8'));
+  for (const field of ['action', 'targetType']) {
+    for (const option of page.field(field).querySelectorAll('option')) {
+      if (!option.value.startsWith('content.') && !['newsArticle', 'lastPost'].includes(option.value)) continue;
+      for (const language of ['en', 'fr'])
+        assert.ok(translations[language][option.dataset.i18n], `${language}: ${option.dataset.i18n}`);
+    }
+  }
 });
 
 test('invalid date ranges neither fetch nor export', async () => {

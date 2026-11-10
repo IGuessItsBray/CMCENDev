@@ -23,6 +23,7 @@ const {
 
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const { writeContentUpdateAudit } = require('../services/content-audit');
 const { sendMail } = require('../services/mailer');
 const { getEventSnapshot } = require('../services/content-snapshots');
 const { recordContentRevision } = require('../services/content-revisions');
@@ -715,7 +716,6 @@ router.post(
         ['rank', 'Submitter rank'],
         ['firstName', 'Submitter first name'],
         ['lastName', 'Submitter last name'],
-        ['unitRole', 'Submitter unit or role'],
         ['email', 'Submitter email'],
       ];
 
@@ -1547,19 +1547,17 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     event.rejectionReason = '';
 
     await event.save();
+
+    await writeContentUpdateAudit({
+      req,
+      content: event,
+      previousStatus,
+      targetType: 'event',
+      targetSnapshot: getEventSnapshot(event),
+    });
     await linkEventImageToMediaAsset(event);
 
     if (event.status === 'published' && previousStatus !== 'published') {
-      await writeAuditLog({
-        req,
-        action: 'content.published',
-        actor: req.user,
-        targetType: 'event',
-        target: event._id,
-        targetSnapshot: getEventSnapshot(event),
-        metadata: { source: 'update' },
-      });
-
       await notifyEventPublished(event, req, {
         accountUser: isOwner ? req.user : null,
       });

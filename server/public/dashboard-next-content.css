@@ -212,7 +212,7 @@ html[data-theme='dark'] :is(#adminContent, #adminArticles) .article-block {
 :is(#adminContent, #adminArticles) > .admin-area-heading {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 3;
   margin-bottom: 16px;
 }
 :is(#adminContent, #adminArticles) .content-workspace-layout {
@@ -258,18 +258,28 @@ html[data-theme='dark'] :is(#adminContent, #adminArticles) .article-block {
     visibility 140ms;
 }
 :is(#adminContent, #adminArticles) .content-workspace-detail-heading {
-  gap: 4px 12px;
-  padding-bottom: 0;
+  position: sticky;
+  top: var(--content-workspace-sticky-top);
+  z-index: 2;
+  max-height: calc(100dvh - var(--content-workspace-sticky-top));
+  overflow-y: auto;
+  gap: 6px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--admin-border);
+  background: var(--admin-bg);
+  box-shadow: 0 4px 6px var(--workspace-edge-shadow);
 }
 :is(#adminContent, #adminArticles) .content-workspace-detail-heading h2 {
+  min-width: 0;
   font-size: clamp(22px, 2vw, 28px);
+  overflow-wrap: anywhere;
 }
 :is(#adminContent, #adminArticles) .content-workspace-detail-info {
   margin: 0;
   font-size: 12px;
 }
 :is(#adminContent, #adminArticles) .content-workspace-public-link {
-  margin-top: 2px;
+  margin-top: 0;
   padding: 4px 8px;
   font-size: 12px;
 }
@@ -334,10 +344,15 @@ html[data-theme='dark'] :is(#adminContent, #adminArticles) .article-block {
   white-space: nowrap;
 }
 :is(#adminContent, #adminArticles) .content-workspace-detail {
+  --content-workspace-sticky-top: var(--admin-header-height, 100px);
   display: grid;
   align-content: start;
   gap: 14px;
   min-width: 0;
+}
+:is(#adminContent, #adminArticles) .content-workspace-detail > :not(header)
+  :is(input, select, textarea, button, a, summary, [tabindex], [contenteditable]) {
+  scroll-margin-top: calc(var(--content-workspace-sticky-top) + var(--content-workspace-header-height, 0px) + 12px);
 }
 :is(#adminContent, #adminArticles) .admin-editor-field {
   display: grid;
@@ -426,7 +441,22 @@ html[data-theme='dark'] :is(#adminContent, #adminArticles) .article-block {
 :is(#adminContent, #adminArticles) .content-workspace-review-actions {
   flex-wrap: wrap;
 }
+.content-workspace-action-bar :is(
+  .content-workspace-primary-actions,
+  .content-workspace-review-actions,
+  .content-workspace-publication-choice-field
+) {
+  min-width: 0;
+  max-width: 100%;
+}
 @media (max-width: 1100px) {
+  /* Leave room for the submission itself on small screens. */
+  :is(#adminContent, #adminArticles) > .admin-area-heading {
+    position: static;
+  }
+  :is(#adminContent, #adminArticles) .content-workspace-detail {
+    --content-workspace-sticky-top: 0px;
+  }
   #adminContent > .admin-area-heading {
     flex-wrap: wrap;
   }
@@ -445,6 +475,7 @@ html[data-theme='dark'] :is(#adminContent, #adminArticles) .article-block {
   :is(#adminContent, #adminArticles) .content-workspace-list-panel {
     max-height: 420px;
     position: relative;
+    top: auto;
     height: 420px;
     transition: height 200ms ease;
   }
@@ -465,7 +496,51 @@ html[data-theme='dark'] :is(#adminContent, #adminArticles) .article-block {
     transition: none;
   }
 }
+@media (max-width: 700px) {
+  :is(#adminContent, #adminArticles) .content-workspace-detail {
+    /* Keep the fixed navigation button clear of the submission title. */
+    --content-workspace-sticky-top: 64px;
+  }
+}
 @media (max-width: 560px) {
+  :is(#adminContent, #adminArticles) .content-workspace-detail-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  :is(#adminContent, #adminArticles) .content-workspace-detail-heading h2 {
+    font-size: 20px;
+  }
+  :is(#adminContent, #adminArticles) .content-workspace-detail-info {
+    grid-column: 1 / -1;
+  }
+  :is(#adminContent, #adminArticles) .content-workspace-detail-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .content-workspace-action-bar :is(
+    .content-workspace-action-row,
+    .content-workspace-primary-actions,
+    .content-workspace-review-actions
+  ) {
+    gap: 6px;
+  }
+  .content-workspace-action-bar .content-workspace-primary-actions {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .content-workspace-action-bar .content-workspace-review-actions {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+  .content-workspace-action-bar .content-workspace-publication-choice {
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
   :is(#adminContent, #adminArticles) .content-workspace-record-form {
     grid-template-columns: minmax(0, 1fr);
     padding: 12px;

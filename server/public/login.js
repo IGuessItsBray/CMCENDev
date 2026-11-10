@@ -100,7 +100,30 @@ function setGuestAccessMessage(message, type = "error") {
   guestAccessMessage.classList.toggle("is-info", type === "info");
 }
 
+function setLoginHeading(isPasswordReset) {
+  const title = document.getElementById("loginTitle");
+  const instruction = document.getElementById("loginInstruction");
+  const titleKey = isPasswordReset ? "reset_password_btn" : "login_title";
+  const instructionKey = isPasswordReset
+    ? "reset_password_instruction"
+    : "login_instruction";
+  title.setAttribute("data-i18n", titleKey);
+  instruction.setAttribute("data-i18n", instructionKey);
+  title.textContent = getLoginTranslation(
+    titleKey,
+    isPasswordReset ? "Reset password" : "Sign in",
+  );
+  instruction.textContent = getLoginTranslation(
+    instructionKey,
+    isPasswordReset
+      ? "Choose a new password for your account."
+      : "Enter your registered email and password.",
+  );
+}
+
 function showLoginForm(message = "", type = "info") {
+  resetPasswordForm.reset();
+  setLoginHeading(false);
   loginForm.hidden = false;
   forgotPasswordForm.hidden = true;
   resetPasswordForm.hidden = true;
@@ -128,6 +151,7 @@ function showForgotPasswordForm() {
 }
 
 function showResetPasswordForm(message = "", type = "info") {
+  setLoginHeading(true);
   loginForm.hidden = true;
   forgotPasswordForm.hidden = true;
   resetPasswordForm.hidden = false;
@@ -456,6 +480,7 @@ forgotPasswordForm.addEventListener("submit", async (event) => {
 
 resetPasswordForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (resetPasswordButton.disabled) return;
 
   const password = document.getElementById("newPassword").value;
   const passwordConfirmation = document.getElementById(
@@ -463,7 +488,12 @@ resetPasswordForm.addEventListener("submit", async (event) => {
   ).value;
 
   if (password !== passwordConfirmation) {
-    setResetPasswordMessage(CMCENUtils.translateText("passwords_do_not_match", "Passwords do not match."));
+    setResetPasswordMessage(
+      CMCENUtils.translateText(
+        "passwords_do_not_match",
+        "Passwords do not match.",
+      ),
+    );
     return;
   }
 
@@ -684,7 +714,7 @@ loginForm.addEventListener("submit", async (event) => {
 });
 
 if (resetToken) {
-  showResetPasswordForm("Choose a new password for your account.", "info");
+  showResetPasswordForm();
 } else if (loginNotice === "td-insurance-members-only") {
   setLoginMessage(
     getLoginTranslation(

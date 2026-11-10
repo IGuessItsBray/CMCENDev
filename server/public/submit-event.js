@@ -43,6 +43,7 @@ const pageTitle = document.getElementById("submitEventTitle");
 const redirectToLogin = CMCENUtils.redirectToLogin;
 
 let currentUser = null;
+let eventProfileNotice = null;
 let isSubmitting = false;
 let accessDenied = false;
 let editingEvent = null;
@@ -426,6 +427,15 @@ async function initializeEventPage() {
       return;
     }
 
+    eventProfileNotice = window.CMCENSubmissionProfile.createNotice({
+      form: eventForm,
+      type: "event",
+      user: currentUser,
+      getToken: () => CMCENUtils.requireAuthToken(),
+      isEditing: () => Boolean(editingEventId),
+      onRefresh: (profile) => { currentUser = profile; },
+    });
+
     const canPublishGeneral =
       !personalSubmission &&
       (currentUser.permissions?.canReviewAndPublish === true ||
@@ -472,6 +482,7 @@ eventForm.addEventListener(
 );
 eventForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (isSubmitting) return;
 
   clearFormMessage();
 
@@ -494,6 +505,7 @@ eventForm.addEventListener("submit", async (event) => {
   setSubmitting(true);
 
   try {
+    if (!(await eventProfileNotice.check({ focus: true }))) return;
     const wasEditing = Boolean(editingEventId);
     const requestUrl = wasEditing
       ? `/api/events/${encodeURIComponent(editingEventId)}`
@@ -785,6 +797,7 @@ async function loadEventForEditing(token, eventId) {
 
 function updateEventFormModeText() {
   const isEditing = Boolean(editingEventId);
+  eventProfileNotice?.render();
 
   updateEventEditContext();
   cancelEventEditing.hidden = !isEditing;

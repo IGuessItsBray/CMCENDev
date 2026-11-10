@@ -1,0 +1,11 @@
+.content-diff { min-width: 0; width: 100%; }
+.content-diff section { margin: 1rem 0; }
+.content-diff h4, .content-diff h5 { margin: .5rem 0; }
+.content-diff-words, .content-diff pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.content-diff-words del { color: #881d24; background: #ffe7e7; text-decoration: line-through; }
+.content-diff-words ins { color: #14552b; background: #e0f5e5; text-decoration: underline; }
+.content-diff-words del + ins { margin-left: .2em; }
+.content-diff-legend { font-size: .85rem; }
+.content-diff summary { cursor: pointer; }
+.content-diff pre { max-height: 25rem; overflow: auto; }
+.content-revision-revert { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin: 1rem 0; }

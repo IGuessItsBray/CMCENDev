@@ -123,6 +123,10 @@ test('review context renders explicit parent links even while the comment remain
     tag,
     children: [],
     dataset: {},
+    attributes: {},
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
     append(...children) {
       this.children.push(...children);
     },
@@ -147,7 +151,7 @@ test('review context renders explicit parent links even while the comment remain
     },
   });
   const links = section.children.filter((child) => child.tag === 'a');
-  assert.equal(section.children[1].textContent, '<img onerror=bad()>');
+  assert.ok(section.children.some((child) => child.textContent === '<img onerror=bad()>'));
   assert.equal(links[0].href, legacyUrl);
   assert.equal(links[0].textContent, 'View original legacy parent article');
   assert.equal(links[1].href, '/retirement-message?id=parent');

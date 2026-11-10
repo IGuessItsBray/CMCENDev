@@ -623,12 +623,12 @@ window.ContentWorkspaceActions = {
       }
     }
 
-    function createContentWorkspaceBottomActions(
+    function createContentWorkspaceActionBar(
       item,
       { canSave = false } = {},
     ) {
       const section = document.createElement("section");
-      section.className = "content-workspace-bottom-actions";
+      section.className = "content-workspace-action-bar";
       const actionRow = document.createElement("div");
       actionRow.className = "content-workspace-action-row";
       const removalActions = createRemovalActions(item);
@@ -923,6 +923,6 @@ window.ContentWorkspaceActions = {
       }
     }
 
-    return { createContentWorkspaceBottomActions, saveContentWorkspaceChanges };
+    return { createContentWorkspaceActionBar, saveContentWorkspaceChanges };
   },
 };

@@ -71,6 +71,138 @@ const { createUnsubscribeToken } = require('../../services/weekly-brief');
 let mongoServer;
 let userSequence = 0;
 
+describe('staff content audit coverage', () => {
+  const tokenFor = (user) => bearer(require('../../services/auth-session').createSessionToken(user));
+  const lastPostPayload = () => ({
+    deceased: { fullRank: 'Sergeant', firstName: 'Audit', surname: 'Example' },
+    messageLanguage: 'en',
+    message: 'A complete Last Post notice for audit coverage.',
+    publicationPermissionConfirmed: true,
+  });
+
+  test('records hide and restore exactly once with actor, target, reason and both statuses for every post type', async () => {
+    const staff = await createUser({ role: 'administrator' });
+    const member = await createUser();
+    const parent = await LastPostMessage.create({
+      ...lastPostPayload(),
+      submitter: { rank: 'Captain', firstName: 'Test', lastName: 'Member', email: 'test@example.test' },
+      messages: { en: 'Published parent' }, status: 'published', createdBy: staff._id,
+    });
+    const article = await NewsArticle.create({
+      title: { en: 'Audit story', fr: 'Article' }, content: { en: 'Body', fr: 'Texte' },
+      status: 'published', createdBy: staff._id,
+    });
+    const event = await Event.create({ ...eventPayload(), status: 'published', createdBy: staff._id });
+    const notice = await RetirementMessage.create({
+      ...retirementPayload(), messageLanguage: 'en', status: 'published', createdBy: staff._id,
+      publicationConsent: { confirmed: true, confirmedAt: new Date() },
+      memberReviewConfirmation: { confirmed: true, confirmedAt: new Date() },
+    });
+    const comment = await Comment.create({ parentType: 'lastPost', parentId: parent._id,
+      author: staff._id, body: 'Public comment', status: 'published' });
+    for (const [record, Model, targetType, base] of [
+      [article, NewsArticle, 'newsArticle', '/api/news'],
+      [event, Event, 'event', '/api/admin/events'],
+      [notice, RetirementMessage, 'retirementMessage', '/api/admin/retirement-messages'],
+      [parent, LastPostMessage, 'lastPost', '/api/admin/last-posts'],
+      [comment, Comment, 'comment', '/api/admin/comments'],
+    ]) {
+      const url = `${base}/${record._id}`;
+      for (const action of ['hide', 'restore']) {
+        await request(app).patch(`${url}/${action}`).expect(401);
+        await request(app).patch(`${url}/${action}`).set('Authorization', tokenFor(member)).expect(403);
+      }
+      await request(app).patch(`${url}/restore`).set('Authorization', tokenFor(staff)).expect(409);
+      assert.equal(await AuditLog.countDocuments({ target: record._id }), 0);
+      await request(app).patch(`${url}/hide`).set('Authorization', tokenFor(staff))
+        .send({ reason: '  Correct   this post  ' }).expect(200);
+      await request(app).patch(`${url}/hide`).set('Authorization', tokenFor(staff)).expect(409);
+      assert.equal((await Model.findById(record._id)).status, 'hidden');
+      await request(app).patch(`${url}/restore`).set('Authorization', tokenFor(staff)).expect(200);
+      await request(app).patch(`${url}/restore`).set('Authorization', tokenFor(staff)).expect(409);
+      assert.equal((await Model.findById(record._id)).status, 'published');
+      const logs = await AuditLog.find({ target: record._id }).sort({ createdAt: 1, _id: 1 }).lean();
+      assert.deepEqual(logs.map((log) => log.action), ['content.hidden', 'content.restored']);
+      assert.equal(logs[0].metadata.reason, 'Correct this post');
+      for (const [index, log] of logs.entries()) {
+        assert.equal(String(log.actor), String(staff._id));
+        assert.equal(log.actorSnapshot.accountName, staff.accountName);
+        assert.equal(log.targetType, targetType);
+        assert.ok(log.targetSnapshot.title);
+        assert.ok(log.createdAt);
+        assert.equal(log.metadata.previousStatus, index ? 'hidden' : 'published');
+        assert.equal(log.metadata.status, index ? 'published' : 'hidden');
+        assert.equal(log.metadata.ipAddress, '127.0.0.1');
+      }
+    }
+  });
+
+  for (const [targetType, Model, base, payload] of [
+    ['event', Event, '/api/events', eventPayload],
+    ['retirementMessage', RetirementMessage, '/api/retirement-messages', retirementPayload],
+    ['lastPost', LastPostMessage, '/api/last-posts', lastPostPayload],
+  ]) {
+    test(`records ${targetType} full edits and publish/unpublish/republish without claiming new content`, async () => {
+      const staff = await createUser({ role: 'developer' });
+      const token = tokenFor(staff);
+      await request(app).post(base).set('Authorization', token).send({ ...payload(), publishNow: false }).expect(201);
+      const content = await Model.findOne({ createdBy: staff._id });
+      assert.equal(content.status, 'pending');
+      const url = `${base}/${content._id}`;
+      for (const publishNow of [true, true, false, true])
+        await request(app).patch(url).set('Authorization', token).send({ ...payload(), publishNow }).expect(200);
+      const logs = await AuditLog.find({ target: content._id }).sort({ createdAt: 1, _id: 1 }).lean();
+      assert.deepEqual(logs.map((log) => log.action), [
+        'content.created', 'content.updated', 'content.published', 'content.updated',
+        'content.updated', 'content.unpublished', 'content.updated', 'content.published',
+      ]);
+      assert.deepEqual(logs.slice(1).map((log) => [log.metadata.previousStatus, log.metadata.status]), [
+        ['pending', 'published'], ['pending', 'published'], ['published', 'published'],
+        ['published', 'pending'], ['published', 'pending'], ['pending', 'published'], ['pending', 'published'],
+      ]);
+      const filtered = await request(app).get('/api/audit-logs').set('Authorization', token)
+        .query({ action: 'content.unpublished', targetType }).expect(200);
+      assert.equal(filtered.body.logs.length, 1);
+      assert.equal(filtered.body.logs[0].target, String(content._id));
+    });
+  }
+
+  test('comment edits audit publication and resubmission without false creation or duplicate publication', async () => {
+    const staff = await createUser({ role: 'administrator' });
+    const author = await createUser({ role: 'contributor' });
+    const comment = await Comment.create({ parentType: 'lastPost', parentId: new mongoose.Types.ObjectId(),
+      author: author._id, body: 'Original comment', status: 'pending' });
+    const url = `/api/comments/${comment._id}`;
+    await request(app).patch(url).send({ body: 'Unauthorized' }).expect(401);
+    await request(app).patch(url).set('Authorization', tokenFor(staff)).send({ body: '' }).expect(400);
+    assert.equal(await AuditLog.countDocuments({ target: comment._id }), 0);
+    for (const user of [staff, staff, author, staff])
+      await request(app).patch(url).set('Authorization', tokenFor(user)).send({ body: 'Edited comment' }).expect(200);
+    const logs = await AuditLog.find({ target: comment._id }).sort({ createdAt: 1, _id: 1 }).lean();
+    assert.deepEqual(logs.map((log) => log.action), [
+      'content.updated', 'content.published', 'content.updated', 'content.updated',
+      'content.unpublished', 'content.updated', 'content.published',
+    ]);
+  });
+
+  test('committed article and admin edits remain audited if later revision persistence fails', async (t) => {
+    const staff = await createUser({ role: 'administrator' });
+    const article = await NewsArticle.create({ title: { en: 'Audit story', fr: 'Article' },
+      content: { en: 'Original', fr: 'Texte' }, status: 'draft', createdBy: staff._id });
+    const comment = await Comment.create({ parentType: 'lastPost', parentId: new mongoose.Types.ObjectId(),
+      author: staff._id, body: 'Original', status: 'pending' });
+    t.mock.method(ContentRevision, 'create', async () => { throw new Error('Simulated revision write failure'); });
+    await request(app).patch(`/api/news/${article._id}`).set('Authorization', tokenFor(staff))
+      .send({ title: { en: 'Audit story', fr: 'Article' }, content: { en: 'Changed', fr: 'Texte' }, status: 'draft' }).expect(500);
+    await request(app).patch(`/api/admin/comments/${comment._id}`).set('Authorization', tokenFor(staff))
+      .send({ body: 'Changed' }).expect(500);
+    assert.equal((await NewsArticle.findById(article._id)).content.en, 'Changed');
+    assert.equal((await Comment.findById(comment._id)).body, 'Changed');
+    assert.equal(await AuditLog.countDocuments({ target: article._id, action: 'content.updated' }), 1);
+    assert.equal(await AuditLog.countDocuments({ target: comment._id, action: 'content.admin_updated' }), 1);
+  });
+});
+
 function createMemberData(overrides = {}) {
   userSequence += 1;
   const email = overrides.email || `member-${userSequence}@example.test`;
@@ -1649,7 +1781,7 @@ describe('personal submissions', () => {
     assert.equal(comment.rejectionReason, '');
     assert.equal(
       await AuditLog.countDocuments({
-        action: 'content.created',
+        action: 'content.updated',
         target: comment._id,
       }),
       1,
@@ -4556,6 +4688,71 @@ describe('archival draft lifecycle', () => {
   });
 });
 
+describe('optional submitter organization', () => {
+  for (const [label, profile, expectedUnit] of [
+    ['blank unit and company', { currentUnit: '', company: '' }, ''],
+    ['current unit', { currentUnit: 'Original Unit', company: 'Other Company' }, 'Original Unit'],
+    ['company fallback', { currentUnit: '', company: 'Original Company' }, 'Original Company'],
+  ]) {
+    for (const [type, endpoint, Model, payload, unitKey, resultKey] of [
+      ['retirementMessage', '/api/retirement-messages', RetirementMessage, retirementPayload, 'unit', 'retirementMessage'],
+      ['event', '/api/events', Event, eventPayload, 'unitRole', 'event'],
+    ]) {
+      test(`${type} accepts ${label} and preserves authenticated account attribution`, async () => {
+        const contributor = await createUser({ role: 'contributor', ...profile });
+        const editor = await createUser({ role: 'editor', currentUnit: 'Editor Unit' });
+        const auth = bearer((await login(contributor)).body.token);
+        const editorAuth = bearer((await login(editor)).body.token);
+        const body = payload();
+        body.createdBy = String(editor._id);
+        body.submitter = { ...body.submitter, unit: 'Spoofed Unit', unitRole: 'Spoofed Unit', email: 'spoofed@example.test' };
+
+        const response = await request(app).post(endpoint).set('Authorization', auth).send(body).expect(201);
+        const id = response.body[resultKey]._id;
+        let record = await Model.findById(id).lean();
+        assert.equal(String(record.createdBy), String(contributor._id));
+        assert.equal(record.submitter[unitKey], expectedUnit);
+        assert.equal(record.submitter.email, contributor.email);
+        const creationAudit = await AuditLog.findOne({ target: id, action: 'content.created' });
+        assert.equal(String(creationAudit.actor), String(contributor._id));
+
+        await request(app).patch(`${endpoint}/${id}`).set('Authorization', editorAuth).send(body).expect(200);
+        record = await Model.findById(id).lean();
+        assert.equal(String(record.createdBy), String(contributor._id));
+        assert.equal(record.submitter[unitKey], expectedUnit, 'Editor must not replace an optional original unit, even when blank');
+        assert.equal(record.submitter.email, contributor.email);
+
+        const workspace = await request(app)
+          .get(`/api/admin/content?type=${type}&status=pending`)
+          .set('Authorization', editorAuth).expect(200);
+        const item = workspace.body.items.find((entry) => entry._id === String(id));
+        assert.equal(item.content.createdBy._id, String(contributor._id));
+        assert.equal(item.content.submitter[unitKey], expectedUnit);
+        await request(app).get(`${endpoint}/mine`).set('Authorization', auth).expect(200);
+      });
+    }
+  }
+
+  test('optional organization does not bypass authentication, permissions, or other required profile fields', async () => {
+    const subscriber = await createUser({ currentUnit: '', company: '' });
+    const contributor = await createUser({ role: 'contributor', currentUnit: '', company: '' });
+    const subscriberAuth = bearer((await login(subscriber)).body.token);
+    const auth = bearer((await login(contributor)).body.token);
+    for (const [endpoint, payload] of [['/api/retirement-messages', retirementPayload], ['/api/events', eventPayload]]) {
+      await request(app).post(endpoint).send(payload()).expect(401);
+      await request(app).post(endpoint).set('Authorization', subscriberAuth).send(payload()).expect(403);
+      for (const field of ['firstName', 'lastName', 'email', ...(endpoint === '/api/events' ? ['rank'] : [])]) {
+        await User.collection.updateOne({ _id: contributor._id }, { $set: { [field]: '' } });
+        const response = await request(app).post(endpoint).set('Authorization', auth).send(payload()).expect(400);
+        assert.match(response.body.error, /Complete your profile/);
+        await User.collection.updateOne({ _id: contributor._id }, { $set: { [field]: contributor[field] } });
+      }
+    }
+    assert.equal(await RetirementMessage.countDocuments(), 0);
+    assert.equal(await Event.countDocuments(), 0);
+  });
+});
+
 describe('retirement message lifecycle', () => {
   test('lets guests search and filter only published retirement messages', async () => {
     const first = await submitAndPublishRetirement();
@@ -4976,7 +5173,7 @@ describe('retirement message lifecycle', () => {
     assert.equal(updatedMessage.submitter.firstName, contributor.firstName);
     assert.equal(updatedMessage.submitter.lastName, contributor.lastName);
     assert.equal(updatedMessage.submitter.email, contributor.email);
-    assert.equal(updatedMessage.submitter.unit, contributor.currentUnit);
+    assert.equal(updatedMessage.submitter.unit, '');
     assert.equal(updatedMessage.submitter.relationship, 'family');
 
     await request(app)

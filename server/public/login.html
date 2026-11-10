@@ -6,11 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title data-i18n="login_page_title">Member Login | CMCEN / RCMCE</title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="/images/favicon_crest.png"
-    />
+    <link rel="icon" type="image/png" href="/images/favicon_crest.png" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
 
@@ -35,7 +31,7 @@
           <div class="login-panel-heading">
             <h2 id="loginTitle" data-i18n="login_title">Sign in</h2>
 
-            <p data-i18n="login_instruction">
+            <p id="loginInstruction" data-i18n="login_instruction">
               Enter your registered email and password.
             </p>
           </div>
@@ -184,22 +180,106 @@
             ></p>
 
             <div class="login-field">
-              <p id="resetPasswordHelp" data-i18n="password_policy_guidance">
+              <label for="newPassword" data-i18n="password"> Password </label>
+
+              <div class="reset-password-input">
+                <input
+                  type="password"
+                  id="newPassword"
+                  aria-describedby="resetPasswordHelp resetPasswordRequirements resetPasswordStrengthText resetPasswordRecommendationsHeading resetPasswordRecommendations"
+                  name="password"
+                  autocomplete="new-password"
+                  data-i18n-placeholder="password_create_placeholder"
+                  placeholder="Create a password"
+                  required
+                />
+                <button
+                  type="button"
+                  class="reset-password-toggle"
+                  id="newPasswordToggle"
+                  aria-controls="newPassword"
+                  aria-label="Show password"
+                  aria-pressed="false"
+                  hidden
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="22"
+                    height="22"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                    />
+                    <circle cx="12" cy="12" r="3" />
+                    <path class="reset-password-eye-slash" d="m3 3 18 18" />
+                  </svg>
+                </button>
+              </div>
+              <p
+                id="resetPasswordHelp"
+                class="reset-password-help"
+                data-i18n="password_policy_guidance"
+              >
                 Use at least 12 characters and no more than 72 UTF-8 bytes.
                 Accented characters and emoji may use multiple bytes.
               </p>
-              <label for="newPassword" data-i18n="password"> Password </label>
-
-              <input
-                type="password"
-                id="newPassword"
-                aria-describedby="resetPasswordHelp"
-                name="password"
-                autocomplete="new-password"
-                data-i18n-placeholder="password_create_placeholder"
-                placeholder="Create a password"
-                required
-              />
+              <div
+                id="resetPasswordFeedback"
+                class="reset-password-feedback"
+                hidden
+              >
+                <ul
+                  id="resetPasswordRequirements"
+                  class="reset-password-requirements"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <li id="resetPasswordLength"></li>
+                  <li id="resetPasswordBytes"></li>
+                </ul>
+                <p
+                  id="resetPasswordStrengthText"
+                  aria-live="polite"
+                  aria-atomic="true"
+                ></p>
+                <div
+                  id="resetPasswordStrength"
+                  class="password-strength is-empty"
+                  aria-hidden="true"
+                >
+                  <span></span>
+                </div>
+                <p
+                  id="resetPasswordRecommendationsHeading"
+                  class="reset-password-recommendations-heading"
+                  data-i18n="password_recommendations_heading"
+                >
+                  Optional recommendations
+                </p>
+                <ul
+                  id="resetPasswordRecommendations"
+                  class="reset-password-requirements"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <li id="resetPasswordUppercase"></li>
+                  <li id="resetPasswordNumber"></li>
+                  <li id="resetPasswordSpecial"></li>
+                </ul>
+                <p
+                  class="reset-password-help"
+                  data-i18n="password_strength_guidance"
+                >
+                  A rough estimate, not a check for common or compromised
+                  passwords. Use a unique passphrase. Uppercase letters, numbers
+                  and symbols are optional.
+                </p>
+              </div>
             </div>
 
             <div class="login-field">
@@ -210,15 +290,50 @@
                 Password confirmation
               </label>
 
-              <input
-                type="password"
-                id="newPasswordConfirmation"
-                name="passwordConfirmation"
-                autocomplete="new-password"
-                data-i18n-placeholder="password_confirm_placeholder"
-                placeholder="Confirm your password"
-                required
-              />
+              <div class="reset-password-input">
+                <input
+                  type="password"
+                  id="newPasswordConfirmation"
+                  name="passwordConfirmation"
+                  aria-describedby="resetPasswordMatch"
+                  autocomplete="new-password"
+                  data-i18n-placeholder="password_confirm_placeholder"
+                  placeholder="Confirm your password"
+                  required
+                />
+                <button
+                  type="button"
+                  class="reset-password-toggle"
+                  id="newPasswordConfirmationToggle"
+                  aria-controls="newPasswordConfirmation"
+                  aria-label="Show password confirmation"
+                  aria-pressed="false"
+                  hidden
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="22"
+                    height="22"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                    />
+                    <circle cx="12" cy="12" r="3" />
+                    <path class="reset-password-eye-slash" d="m3 3 18 18" />
+                  </svg>
+                </button>
+              </div>
+              <p
+                id="resetPasswordMatch"
+                class="reset-password-match"
+                aria-live="polite"
+                aria-atomic="true"
+              ></p>
             </div>
 
             <button
@@ -413,6 +528,7 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/validation-i18n.js"></script>
+    <script src="/reset-password-feedback.js"></script>
     <script src="/login.js"></script>
   </body>
 </html>

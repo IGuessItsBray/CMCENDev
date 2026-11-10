@@ -76,6 +76,11 @@ const {
   restoreContent,
 } = require('../services/content-lifecycle');
 const { recordContentRevision } = require('../services/content-revisions');
+const {
+  getContentVersion,
+  getRevisionRevertPlan,
+  revertContentRevision,
+} = require('../services/content-revision-revert');
 const { getArticleReviews } = require('../services/article-review');
 const {
   linkMediaAssetToSource,
@@ -241,6 +246,16 @@ async function saveAdminContentEdit({
   markContentEdited(document, req.user);
   await document.save();
 
+  await writeAuditLog({
+    req,
+    action: 'content.admin_updated',
+    actor: req.user,
+    targetType,
+    target: document._id,
+    targetSnapshot: getSnapshot(document),
+    metadata: { fields: changedFields, source: 'admin-content-edit' },
+  });
+
   if (commentBefore !== undefined && commentBefore !== document.body) {
     await recordContentRevision({
       contentType: targetType,
@@ -284,16 +299,6 @@ async function saveAdminContentEdit({
       });
     }
   }
-
-  await writeAuditLog({
-    req,
-    action: 'content.admin_updated',
-    actor: req.user,
-    targetType,
-    target: document._id,
-    targetSnapshot: getSnapshot(document),
-    metadata: { fields: changedFields, source: 'admin-content-edit' },
-  });
 
   return res.json({
     message: 'Content updated',
@@ -1362,9 +1367,12 @@ router.get(
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
-      const exists = await Model.exists({ _id: contentId });
+      if (!mongoose.isObjectIdOrHexString(contentId)) {
+        return res.status(400).json({ error: 'Invalid content ID' });
+      }
+      const content = await Model.findById(contentId).lean();
 
-      if (!exists) {
+      if (!content) {
         return res.status(404).json({ error: 'Content not found' });
       }
 
@@ -1376,7 +1384,16 @@ router.get(
         .limit(100)
         .lean();
 
-      return res.json({ revisions });
+      const pending = await ContentRevision.exists({ contentType, contentId, revertState: 'pending' });
+      return res.json({
+        revisions: revisions.map((revision) => {
+          const { canRevert, revertReason } = pending
+            ? { canRevert: false, revertReason: 'An earlier revert needs review before another revert can run.' }
+            : getRevisionRevertPlan(content, revision, req.user);
+          return { ...revision, canRevert, revertReason };
+        }),
+        version: getContentVersion(content),
+      });
     } catch (error) {
       if (error.name === 'CastError') {
         return res.status(400).json({ error: 'Invalid content ID' });
@@ -1386,6 +1403,42 @@ router.get(
       return res
         .status(500)
         .json({ error: 'Could not load content revisions' });
+    }
+  },
+);
+
+// Restore only trusted, fully supported revision snapshots. Publication and
+// personal details are never accepted in the request or restored by this route.
+router.post(
+  '/content/:contentType/:contentId/revisions/:revisionId/revert',
+  authMiddleware,
+  requireContentWorkspaceAccess,
+  async (req, res) => {
+    try {
+      const { contentType, contentId, revisionId } = req.params;
+      const Model = REVISION_CONTENT_MODELS[contentType];
+      if (!Model) return res.status(400).json({ error: 'Unsupported content type' });
+      if (!getPermittedContentWorkspaceTypes(req.permissions).includes(contentType))
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      if (!mongoose.isObjectIdOrHexString(contentId) || !mongoose.isObjectIdOrHexString(revisionId) ||
+          !isPlainObject(req.body) || Object.keys(req.body).length !== 1 ||
+          typeof req.body.version !== 'string' || !/^[a-f0-9]{64}$/u.test(req.body.version))
+        return res.status(400).json({ error: 'Provide only the current history version and valid content and revision IDs' });
+      const content = await Model.findById(contentId).lean();
+      if (!content) return res.status(404).json({ error: 'Content not found' });
+      const revision = await ContentRevision.findOne({ _id: revisionId, contentType, contentId }).lean();
+      if (!revision) return res.status(404).json({ error: 'Revision not found' });
+      const result = await revertContentRevision({ Model, content, revision,
+        version: req.body.version, actor: req.user, req });
+      return res.json(result);
+    } catch (error) {
+      if ([409, 503].includes(error.status)) {
+        return res.status(error.status).json({ error: error.message,
+          ...(error.revisionId ? { revisionId: error.revisionId, contentChanged: error.contentChanged } : {}),
+        });
+      }
+      console.error('Could not revert content revision:', error);
+      return res.status(500).json({ error: 'Could not revert content revision' });
     }
   },
 );
@@ -5546,6 +5599,7 @@ function buildContentRemovalHandler({
         targetSnapshot: snapshot,
         metadata: {
           previousStatus: removal.previousStatus,
+          status: content.status,
           reason: removal.reason,
           removedByOwner: isOwner,
         },
@@ -5607,6 +5661,8 @@ function buildContentRestoreHandler({
         target: content._id,
         targetSnapshot: snapshot,
         metadata: {
+          previousStatus: 'hidden',
+          status: content.status,
           restoredStatus: restoration.restoredStatus,
         },
       });

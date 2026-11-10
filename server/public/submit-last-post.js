@@ -26,6 +26,7 @@ const lastPostPageParams = new URLSearchParams(window.location.search);
 const personalSubmission = lastPostPageParams.get("personal") === "1";
 const editingLastPostId = lastPostPageParams.get("id");
 let editingLastPost = null;
+let lastPostProfileNotice = null;
 let editingLastPostMessages = {};
 let activeLastPostMessageLanguage = lastPostMessageLanguage?.value || "en";
 const lastPostImageCrop = CMCENUtils.createImageCropController({
@@ -255,6 +256,13 @@ async function initializeLastPostSubmission() {
       showPageMessage(translate("last_post_access_denied"));
       return;
     }
+    lastPostProfileNotice = window.CMCENSubmissionProfile.createNotice({
+      form: lastPostSubmitForm,
+      type: "lastPost",
+      user: currentUser,
+      getToken: () => CMCENUtils.requireAuthToken(),
+      isEditing: () => Boolean(editingLastPostId),
+    });
 
     document.getElementById("lastPostMessageLanguage").value =
       CMCENUtils.getCurrentLanguage();
@@ -289,6 +297,7 @@ async function initializeLastPostSubmission() {
 
 lastPostSubmitForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (lastPostSubmitButton.disabled) return;
   clearFormMessage();
 
   if (!lastPostSubmitForm.checkValidity()) {
@@ -301,6 +310,7 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
 
   setSubmitting(true);
   try {
+    if (!(await lastPostProfileNotice.check({ focus: true }))) return;
     const uploadResult = await uploadLastPostImage(token);
     const submissionPayload = getSubmissionPayload(
       uploadResult?.imageUrl || "",

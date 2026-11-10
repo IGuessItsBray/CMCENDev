@@ -58,19 +58,20 @@
   gap: 0.5rem;
 }
 .content-workspace-archive-source {
-  margin: 0.8rem 0;
-  padding: 0.8rem 1rem;
-  border: 1px solid var(--border-color, #cbd5e1);
-  border-radius: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+  color: var(--admin-muted, var(--text-muted));
+  font-size: 12px;
   overflow-wrap: anywhere;
 }
-.content-workspace-archive-source h3 {
-  margin: 0 0 0.5rem;
+.content-workspace-source-context {
+  flex-basis: 100%;
 }
 .content-workspace-archive-source a {
-  display: inline-block;
-  margin: 0.35rem 0;
-  margin-right: 0.75rem;
+  color: var(--admin-accent, var(--navy-800));
   font-weight: 700;
   text-decoration: underline;
 }
@@ -477,6 +478,15 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px 16px;
   padding-bottom: 23px;
+}
+
+.content-workspace-detail-links {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  min-width: 0;
 }
 
 .content-workspace-detail-heading h2 {
@@ -1144,10 +1154,11 @@ html[data-theme='dark'] .content-workspace-publication-choice-field small {
   gap: 10px;
 }
 
-.content-workspace-bottom-actions {
+.content-workspace-action-bar {
+  grid-column: 1 / -1;
   display: grid;
   gap: 12px;
-  padding-top: 18px;
+  padding-top: 8px;
   border-top: 1px solid var(--branch-grey-200);
 }
 
@@ -1252,7 +1263,6 @@ html[data-theme='dark']
 }
 
 html[data-theme='dark'] .content-workspace-list-heading,
-html[data-theme='dark'] .content-workspace-archive-source,
 html[data-theme='dark'] .content-workspace-language-group,
 html[data-theme='dark'] .content-workspace-image-editor,
 html[data-theme='dark'] .content-workspace-submission-details,
@@ -1264,10 +1274,6 @@ html[data-theme='dark'] .content-workspace-rejection-reason,
 html[data-theme='dark'] .content-workspace-scheduled-publication {
   border-color: var(--dark-border);
   background: var(--dark-surface);
-}
-
-html[data-theme='dark'] .content-workspace-archive-source {
-  border-color: var(--dark-surface-3);
 }
 
 html[data-theme='dark'] .content-workspace-record-skeleton,

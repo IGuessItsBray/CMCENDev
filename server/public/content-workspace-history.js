@@ -6,6 +6,7 @@ window.ContentWorkspaceHistory = {
     contentWorkspaceApiJson,
     getSelectedContentWorkspaceItem,
     formatWorkspaceDate,
+    revertRevision,
   }) {
     function getRevisionActor(revision) {
       const actor = revision?.actorSnapshot || {};
@@ -105,6 +106,16 @@ window.ContentWorkspaceHistory = {
     }
 
     function createRevisionChanges(revision) {
+      if (window.ContentDiff) {
+        return window.ContentDiff.render(document, revision.before || {}, revision.after || {}, {
+          getText,
+          label(field) {
+            const [name, ...parts] = field.split(".");
+            const translation = getRevisionFieldTranslation(name);
+            return [translation ? getText(...translation) : name, ...parts].join(" · ");
+          },
+        });
+      }
       const changes = document.createElement("div");
       changes.className = "content-workspace-revision-changes";
       const changedFields = getRevisionChanges(revision);
@@ -245,6 +256,43 @@ window.ContentWorkspaceHistory = {
             "Changes",
           );
           body.append(changesHeading, createRevisionChanges(revision));
+
+          const revert = document.createElement("div");
+          revert.className = "content-revision-revert";
+          if (revision.action === "staff_content_reverted") {
+            const reverted = document.createElement("p");
+            if (revision.revertState && revision.revertState !== "applied") {
+              setWorkspaceTranslatedText(reverted, "content_revision_not_applied", "This revert was not confirmed as applied. The values below describe the requested change.");
+            } else {
+              setWorkspaceTranslatedText(reverted, "content_revision_reverted_entry", "This entry records a revert.");
+            }
+            body.append(reverted);
+          }
+          if (revision.canRevert && data.version && revertRevision) {
+            const button = document.createElement("button");
+            button.type = "button";
+            setWorkspaceTranslatedText(button, "content_revision_revert", "Revert this change");
+            const feedback = document.createElement("span");
+            feedback.setAttribute("role", "status");
+            button.addEventListener("click", async () => {
+              if (button.disabled) return;
+              button.disabled = true;
+              feedback.textContent = "";
+              try {
+                await revertRevision(item, revision, data.version);
+              } catch (error) {
+                feedback.textContent = error.message;
+              } finally {
+                button.disabled = false;
+              }
+            });
+            revert.append(button, feedback);
+          } else {
+            const reason = document.createElement("span");
+            reason.textContent = revision.revertReason || getText("content_revision_unavailable", "Revert is unavailable without a complete, supported saved revision.");
+            revert.append(reason);
+          }
+          body.append(revert);
 
           if (revision.note) {
             const note = document.createElement("section");

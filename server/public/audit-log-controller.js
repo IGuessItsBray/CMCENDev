@@ -24,7 +24,13 @@
     ["user.password_reset_completed", "audit_action_password_reset_completed"],
     ["contact.submitted", "audit_action_contact_submitted"],
     ["content.created", "audit_action_content_created"],
+    ["content.updated", "audit_action_content_updated"],
+    ["content.admin_updated", "audit_action_content_admin_updated"],
+    ["content.review_content_updated", "audit_action_content_review_content_updated"],
+    ["content.article_review_updated", "audit_action_content_article_review_updated"],
+    ["content.editorial_note_updated", "audit_action_content_editorial_note_updated"],
     ["content.published", "audit_action_content_published"],
+    ["content.unpublished", "audit_action_content_unpublished"],
     ["content.publish_scheduled", "audit_action_content_publish_scheduled"],
     [
       "content.publish_schedule_cancelled",
@@ -35,6 +41,9 @@
     ["content.deleted", "audit_action_content_deleted"],
     ["content.hidden", "audit_action_content_hidden"],
     ["content.restored", "audit_action_content_restored"],
+    ["content.reverted", "audit_action_content_reverted"],
+    ["content.revert_requested", "audit_action_content_revert_requested"],
+    ["content.revert_conflicted", "audit_action_content_revert_conflicted"],
     [
       "content.staff_content_updated",
       "audit_action_content_staff_content_updated",
@@ -95,6 +104,8 @@
     ["translation", "audit_target_translations"],
     ["contactMessage", "audit_target_contact_messages"],
     ["retirementMessage", "audit_target_retirement_posts"],
+    ["lastPost", "audit_target_last_posts"],
+    ["newsArticle", "audit_target_news_articles"],
     ["comment", "audit_target_comments"],
   ];
 
@@ -653,6 +664,9 @@
         deletedBy: "audit_metadata_deleted_by",
         rejectionReason: "audit_metadata_rejection_reason",
         status: "audit_metadata_status",
+        previousStatus: "audit_metadata_previous_status",
+        restoredStatus: "audit_metadata_restored_status",
+        removedByOwner: "audit_metadata_removed_by_owner",
         source: "audit_metadata_source",
         method: "audit_metadata_method",
         methods: "audit_metadata_methods",
@@ -844,8 +858,37 @@
 
       item.append(header, details);
 
+      if (["content.updated", "content.admin_updated", "content.review_content_updated", "content.staff_content_updated", "content.reverted"].includes(log.action) &&
+          ["newsArticle", "event", "retirementMessage", "lastPost", "comment"].includes(log.targetType) &&
+          /^[a-f\d]{24}$/i.test(getTargetId(log.target))) {
+        const history = node("a", "content_revision_review");
+        history.href = `/dashboard-next?area=${log.targetType === "newsArticle" ? "articles" : "content"}&id=${encodeURIComponent(getTargetId(log.target))}&history=1`;
+        item.append(history);
+      }
+
       const metadata = log.metadata || {};
-      const metadataEntries = getAuditMetadataEntries(metadata);
+      const comparedKeys = new Set();
+      if (window.ContentDiff) {
+        for (const [before, after] of [
+          ["before", "after"],
+          ["previousValues", "newValues"],
+          ["previousPage", "newPage"],
+          ["previousContent", "newContent"],
+          ["previousNavigation", "newNavigation"],
+        ]) {
+          if (!Object.hasOwn(metadata, before) || !Object.hasOwn(metadata, after)) continue;
+          comparedKeys.add(before);
+          comparedKeys.add(after);
+          item.append(window.ContentDiff.render(document, metadata[before], metadata[after], {
+            getText: (key, fallback) => {
+              const text = translate(key);
+              return text && text !== key ? text : fallback;
+            },
+          }));
+        }
+      }
+      const metadataEntries = getAuditMetadataEntries(metadata)
+        .filter(([key]) => !comparedKeys.has(key));
 
       if (metadataEntries.length) {
         const metadataList = document.createElement("div");

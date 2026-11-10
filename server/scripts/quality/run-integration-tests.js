@@ -14,7 +14,7 @@ const groups = [
   'system and authentication|MFA and audit behavior|database integrity|admin email controls',
   'public search|permissions and audit logs|news stories|news publication scheduling|professional award recipient records|user administration browsing|authorization matrix and account integrity',
   'retirement message lifecycle|Last Post lifecycle|bilingual person ranks|bilingual retirement specialties',
-  'unified comments|Last Post comment moderation|archival draft lifecycle',
+  'unified comments|Last Post comment moderation|archival draft lifecycle|staff content audit coverage',
   'event, page, and comment workflows|media lifecycle',
 ];
 

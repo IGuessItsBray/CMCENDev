@@ -23,9 +23,25 @@ const ContentRevisionSchema = new mongoose.Schema(
 
     action: {
       type: String,
-      enum: ['staff_content_updated'],
+      enum: ['staff_content_updated', 'staff_content_reverted'],
       required: true,
     },
+
+    revertedRevisionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ContentRevision',
+      default: null,
+    },
+
+    // Reverts are journaled before the atomic content update. Existing records
+    // have no state and are treated as applied, preserving legacy history.
+    revertState: {
+      type: String,
+      enum: ['applied', 'pending', 'conflict', 'failed'],
+      default: 'applied',
+    },
+
+    revertVersion: { type: String, default: '' },
 
     status: {
       type: String,

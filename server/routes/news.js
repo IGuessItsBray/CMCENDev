@@ -13,6 +13,7 @@ const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { isArchiveRecord } = require('../services/archive-staff-review');
 const { writeAuditLog } = require('../services/audit-log');
+const { writeContentUpdateAudit } = require('../services/content-audit');
 const { recordContentRevision } = require('../services/content-revisions');
 const { getScheduledPublicationDate } = require('../services/editorial-review');
 const {
@@ -841,6 +842,13 @@ router.patch(
         article.publishedBy = null;
       }
       await article.save();
+      await writeContentUpdateAudit({
+        req,
+        content: article,
+        previousStatus,
+        targetType: 'newsArticle',
+        targetSnapshot: getNewsSnapshot(article),
+      });
       await linkArticleImage(article);
       await recordNewsArticleRevisions({
         article,
@@ -848,29 +856,6 @@ router.patch(
         actor: req.user,
         note: req.body?.revisionNote,
       });
-      await writeAuditLog({
-        req,
-        action: 'content.updated',
-        actor: req.user,
-        targetType: 'newsArticle',
-        target: article._id,
-        targetSnapshot: getNewsSnapshot(article),
-        metadata: { previousStatus, status: article.status },
-      });
-      if (previousStatus !== article.status) {
-        await writeAuditLog({
-          req,
-          action:
-            article.status === 'published'
-              ? 'content.published'
-              : 'content.unpublished',
-          actor: req.user,
-          targetType: 'newsArticle',
-          target: article._id,
-          targetSnapshot: getNewsSnapshot(article),
-          metadata: { source: 'update' },
-        });
-      }
       return res.json({ article: serializeArticle(article) });
     } catch (error) {
       if (error.name === 'VersionError') {
@@ -927,6 +912,7 @@ router.patch(
         targetSnapshot: snapshot,
         metadata: {
           previousStatus: removal.previousStatus,
+          status: article.status,
           reason: removal.reason,
         },
       });
@@ -975,7 +961,11 @@ router.patch(
         targetType: 'newsArticle',
         target: article._id,
         targetSnapshot: snapshot,
-        metadata: { restoredStatus: restoration.restoredStatus },
+        metadata: {
+          previousStatus: 'hidden',
+          status: article.status,
+          restoredStatus: restoration.restoredStatus,
+        },
       });
 
       return res.json({

@@ -5,6 +5,7 @@ const { getCommentTarget } = require('../config/comment-targets');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const { writeContentUpdateAudit } = require('../services/content-audit');
 const { getCommentSnapshot } = require('../services/content-snapshots');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const {
@@ -309,6 +310,7 @@ router.patch('/:commentId', authMiddleware, async (req, res) => {
         .status(409)
         .json({ error: 'This comment cannot be resubmitted' });
     }
+    const previousStatus = comment.status;
     markContentEdited(comment, req.user);
     comment.body = cleanBody;
     comment.status =
@@ -326,17 +328,13 @@ router.patch('/:commentId', authMiddleware, async (req, res) => {
       comment.status === 'published' ? comment.publishedAt || selectPublicationDate(comment, req.body?.publicationDateChoice) : null;
 
     await comment.save();
-    await writeAuditLog({
+    await writeContentUpdateAudit({
       req,
-      action: 'content.created',
-      actor: req.user,
+      content: comment,
+      previousStatus,
       targetType: 'comment',
-      target: comment._id,
       targetSnapshot: getCommentSnapshot(comment),
-      metadata: {
-        source: 'resubmit',
-        status: comment.status,
-      },
+      source: submitForReview ? 'resubmit' : 'update',
     });
 
     res.json({

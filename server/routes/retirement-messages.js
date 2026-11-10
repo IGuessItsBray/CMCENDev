@@ -13,6 +13,7 @@ const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { RETIREMENT_TRADE_ROLES } = require('../config/content');
 const { writeAuditLog } = require('../services/audit-log');
+const { writeContentUpdateAudit } = require('../services/content-audit');
 const {
   getCertificateRequestSnapshot,
   getRetirementMessageSnapshot,
@@ -258,7 +259,8 @@ function fillSubmitterDetailsFromProfile(submitter = {}, user = {}) {
     firstName: cleanString(submitter.firstName) || profileSubmitter.firstName,
     lastName: cleanString(submitter.lastName) || profileSubmitter.lastName,
     email: cleanString(submitter.email).toLowerCase() || profileSubmitter.email,
-    unit: cleanString(submitter.unit) || profileSubmitter.unit,
+    // Optional snapshot: never substitute a later editor's organization.
+    unit: cleanString(submitter.unit),
   };
 }
 
@@ -362,8 +364,7 @@ function validateRetirementMessagePayload(payload) {
   if (
     !cleanSubmitter.firstName ||
     !cleanSubmitter.lastName ||
-    !cleanSubmitter.email ||
-    !cleanSubmitter.unit
+    !cleanSubmitter.email
   ) {
     return 'Required submitter information is missing';
   }
@@ -478,7 +479,6 @@ router.post(
         ['firstName', 'Submitter first name'],
         ['lastName', 'Submitter last name'],
         ['email', 'Submitter email'],
-        ['unit', 'Submitter unit or organization'],
       ];
 
       for (const [field, label] of missingProfileFields) {
@@ -1009,6 +1009,13 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
         : null;
 
     await retirementMessage.save();
+    await writeContentUpdateAudit({
+      req,
+      content: retirementMessage,
+      previousStatus,
+      targetType: 'retirementMessage',
+      targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+    });
     await linkRetirementPhotoToMediaAsset(retirementMessage);
 
     const certificateRequest = certificatePayload
@@ -1020,34 +1027,6 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
           req,
         })
       : null;
-
-    await writeAuditLog({
-      req,
-      action: 'content.created',
-      actor: req.user,
-      targetType: 'retirementMessage',
-      target: retirementMessage._id,
-      targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
-      metadata: {
-        source: 'resubmit',
-        status: retirementMessage.status,
-      },
-    });
-
-    if (
-      retirementMessage.status === 'published' &&
-      previousStatus !== 'published'
-    ) {
-      await writeAuditLog({
-        req,
-        action: 'content.published',
-        actor: req.user,
-        targetType: 'retirementMessage',
-        target: retirementMessage._id,
-        targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
-        metadata: { source: 'update' },
-      });
-    }
 
     res.json({
       message:

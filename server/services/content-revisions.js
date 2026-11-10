@@ -26,11 +26,17 @@ async function recordContentRevision({
   before,
   after,
   note = '',
+  revertedRevisionId = null,
+  revertState = 'applied',
+  revertVersion = '',
 }) {
   return ContentRevision.create({
     contentType,
     contentId: content._id,
-    action: 'staff_content_updated',
+    action: revertedRevisionId ? 'staff_content_reverted' : 'staff_content_updated',
+    revertedRevisionId,
+    revertState,
+    revertVersion,
     status,
     language,
     fields,

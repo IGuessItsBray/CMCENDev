@@ -4032,6 +4032,109 @@ html[data-theme='dark'] main .article-staff-actions-link:focus-visible {
     color 150ms ease;
 }
 
+.reset-password-input {
+  position: relative;
+  min-width: 0;
+}
+
+.reset-password-input input {
+  padding-right: 52px;
+}
+
+.reset-password-toggle {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--navy-900);
+  cursor: pointer;
+}
+
+.reset-password-toggle[hidden],
+.reset-password-eye-slash {
+  display: none;
+}
+
+.reset-password-toggle.is-visible .reset-password-eye-slash {
+  display: block;
+}
+
+.reset-password-toggle:hover {
+  background: var(--branch-grey-100);
+}
+
+.reset-password-toggle:focus-visible {
+  outline: 2px solid var(--navy-900);
+  outline-offset: -3px;
+}
+
+.reset-password-help,
+.reset-password-feedback,
+.reset-password-match {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.reset-password-help {
+  color: var(--text-muted);
+}
+
+.reset-password-feedback {
+  padding: 12px;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 3px;
+  background: var(--white);
+}
+
+.reset-password-feedback p {
+  margin: 8px 0;
+}
+
+.reset-password-feedback p:last-child {
+  margin-bottom: 0;
+}
+
+.reset-password-recommendations-heading {
+  font-weight: 700;
+}
+
+.reset-password-requirements {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reset-password-requirements li::before {
+  content: '\2022';
+  display: inline-block;
+  width: 1.2em;
+}
+
+.reset-password-requirements [data-state='met']::before {
+  content: '\2713';
+}
+
+.reset-password-requirements [data-state='met'],
+.reset-password-match[data-state='met'] {
+  color: #246348;
+}
+
+.reset-password-requirements [data-state='unmet'],
+.reset-password-match[data-state='unmet'] {
+  color: #842d27;
+}
+
+.reset-password-match:empty {
+  display: none;
+}
+
 .login-submit:hover,
 .login-submit:focus-visible {
   border-color: var(--gold-600);
@@ -19003,6 +19106,47 @@ html[data-theme='dark'] .login-panel {
 
 html[data-theme='dark'] .login-assistance {
   color: var(--dark-text);
+}
+
+html[data-theme='dark'] .reset-password-toggle {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .reset-password-toggle:hover,
+html[data-theme='dark'] .reset-password-feedback {
+  background: var(--dark-surface-2);
+  border-color: var(--dark-border);
+}
+
+html[data-theme='dark'] .reset-password-toggle:focus-visible {
+  outline-color: var(--gold-300);
+}
+
+html[data-theme='dark'] #resetPasswordStrength {
+  background: var(--dark-border);
+}
+
+html[data-theme='dark'] #resetPasswordStrength.is-weak span {
+  background: #f1b0a9;
+}
+
+html[data-theme='dark'] #resetPasswordStrength.is-fair span {
+  background: var(--gold-200);
+}
+
+html[data-theme='dark'] #resetPasswordStrength.is-good span,
+html[data-theme='dark'] #resetPasswordStrength.is-strong span {
+  background: #9be2bc;
+}
+
+html[data-theme='dark'] .reset-password-requirements [data-state='met'],
+html[data-theme='dark'] .reset-password-match[data-state='met'] {
+  color: #9be2bc;
+}
+
+html[data-theme='dark'] .reset-password-requirements [data-state='unmet'],
+html[data-theme='dark'] .reset-password-match[data-state='unmet'] {
+  color: #f1b0a9;
 }
 
 html[data-theme='dark'] .leadership-featured-portrait {

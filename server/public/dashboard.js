@@ -623,6 +623,9 @@ function createProfileForm(user) {
   const required = (value) => CMCENUtils.requiresTextForSave(user, value);
   form.className = "dashboard-profile-form dashboard-profile-form--account";
   form.noValidate = false;
+  if (window.CMCENSubmissionProfile) {
+    form.append(window.CMCENSubmissionProfile.createProfileGuidance(user));
+  }
 
   const grid = document.createElement("div");
   grid.className = "dashboard-profile-grid";
@@ -1104,7 +1107,8 @@ function renderDashboard(user) {
   dashboardProfileSummary.textContent = [user.email, roleTitle]
     .filter(Boolean)
     .join(" · ");
-  dashboardProfileDetails.open = profileWasOpen;
+  dashboardProfileDetails.open =
+    profileWasOpen || Boolean(window.CMCENSubmissionProfile?.getContext());
 
   const isGhost = user.accountType === "ghost" || user.role === "ghost";
   document

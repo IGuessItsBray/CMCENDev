@@ -249,6 +249,14 @@ window.ContentWorkspace = {
       "contentWorkspaceClearFilters",
     );
     const contentWorkspaceDetail = getElement("contentWorkspaceDetail");
+    const detailHeaderObserver = typeof ResizeObserver === "function"
+      ? new ResizeObserver(([entry]) => {
+          contentWorkspaceDetail.style.setProperty(
+            "--content-workspace-header-height",
+            `${entry.target.getBoundingClientRect().height}px`,
+          );
+        })
+      : null;
     const contentWorkspaceListLoadingTemplate = getElement(
       "contentWorkspaceListLoadingTemplate",
     );
@@ -1073,35 +1081,32 @@ window.ContentWorkspace = {
 
     function createArchiveSourceDetails(item) {
       if (!item.publicationDate?.isArchive && item.type !== "comment") return null;
-      const details = document.createElement("section");
+      const details = document.createElement("div");
       details.className = "content-workspace-archive-source";
-      const heading = document.createElement("h3");
-      setWorkspaceTranslatedText(heading,
-        item.type === "comment" ? "content_workspace_comment_context" : "content_workspace_original_source",
-        item.type === "comment" ? "Comment context" : "Original source");
-      details.append(heading);
+      const labelKey = item.type === "comment"
+        ? "content_workspace_comment_context" : "content_workspace_original_source";
+      details.setAttribute("role", "group");
+      details.setAttribute("aria-label", getText(labelKey,
+        item.type === "comment" ? "Comment context" : "Original source"));
+      details.dataset.i18nAriaLabel = labelKey;
       if (item.type === "comment" && item.content?.parentTitle) {
-        const parent = document.createElement("p");
+        const parent = document.createElement("span");
+        parent.className = "content-workspace-source-context";
         parent.textContent = item.content.parentTitle;
         details.append(parent);
       }
       const original = item.publicationDate?.originalPublishedAt;
       if (original) {
-        const date = document.createElement("p");
-        const originalLabel = item.publicationDate.precision === "date"
-          ? original.slice(0, 10)
-          : `${new Date(original).toISOString()} (UTC)`;
-        date.textContent = `${getText("content_workspace_original_publication_date", "Original publication date")}: ${originalLabel}`;
+        const date = document.createElement("time");
+        date.dateTime = original;
+        date.textContent = original.slice(0, 10);
+        const dateLabel = getText("content_workspace_original_publication_date", "Original publication date");
+        date.title = `${dateLabel}: ${original}`;
         details.append(date);
-      }
-      if (item.type !== "comment" && item.archiveSourceIds?.length) {
-        const ids = document.createElement("p");
-        ids.textContent = `${getText("content_workspace_source_ids", "Source IDs")}: ${item.archiveSourceIds.join(", ")}`;
-        details.append(ids);
       }
       const links = item.archiveSourceLinks || [];
       if (!links.length) {
-        const unavailable = document.createElement("p");
+        const unavailable = document.createElement("span");
         unavailable.textContent = getText("content_workspace_source_unavailable", "Legacy original link unavailable");
         details.append(unavailable);
       }
@@ -1147,6 +1152,7 @@ window.ContentWorkspace = {
 
     function renderContentWorkspaceDetail() {
       if (disposed) return;
+      detailHeaderObserver?.disconnect();
       disposeEditors();
       contentWorkspaceDetail.replaceChildren();
       contentWorkspaceDetail.setAttribute(
@@ -1193,10 +1199,13 @@ window.ContentWorkspace = {
       const publicContentLink = createPublicContentLink(item);
 
       header.append(title, createDetailInfo(item), actions);
-      if (publicContentLink) header.append(publicContentLink);
-      contentWorkspaceDetail.append(header);
+      const links = document.createElement("div");
+      links.className = "content-workspace-detail-links";
+      if (publicContentLink) links.append(publicContentLink);
       const archiveSource = createArchiveSourceDetails(item);
-      if (archiveSource) contentWorkspaceDetail.append(archiveSource);
+      if (archiveSource) links.append(archiveSource);
+      if (links.childElementCount) header.append(links);
+      contentWorkspaceDetail.append(header);
 
       const canEditPublicCopy = canEditContentWorkspacePublicCopy(item);
 
@@ -1248,6 +1257,11 @@ window.ContentWorkspace = {
         contentWorkspaceDetail.append(rsvpPanel);
       }
 
+      const scheduledPublication = createScheduledPublicationStatus(item);
+      if (scheduledPublication) {
+        contentWorkspaceDetail.append(scheduledPublication);
+      }
+
       if (!item.isNew && canViewContentWorkspaceHistory(item)) {
         const history = document.createElement("section");
         history.className = "content-workspace-history";
@@ -1294,21 +1308,24 @@ window.ContentWorkspace = {
           );
         });
         history.append(historyHeading, loadHistory, revisions);
+        // Open only when explicitly following the audit log's history link.
+        if (workspaceUrl.searchParams.get("history") === "1") {
+          workspaceUrl.searchParams.delete("history");
+          queueMicrotask(() => {
+            if (!disposed && getSelectedContentWorkspaceItem()?._id === item._id) loadHistory.click();
+          });
+        }
         contentWorkspaceDetail.append(history);
       }
 
-      const scheduledPublication = createScheduledPublicationStatus(item);
-      if (scheduledPublication) {
-        contentWorkspaceDetail.append(scheduledPublication);
-      }
-
-      const bottomActions = createContentWorkspaceBottomActions(item, {
+      const headerActions = createContentWorkspaceActionBar(item, {
         canSave: canEditPublicCopy || Boolean(recordEditor),
       });
-      if (bottomActions) {
-        contentWorkspaceDetail.append(bottomActions);
+      if (headerActions) {
+        header.append(headerActions);
         updateContentWorkspaceSaveAction();
       }
+      detailHeaderObserver?.observe(header);
     }
 
     function hasUnsavedContentWorkspaceChanges() {
@@ -1545,6 +1562,7 @@ window.ContentWorkspace = {
         contentWorkspaceState.nextCursor = contentWorkspaceState.hasMore
           ? nextCursor
           : "";
+        return true;
       } catch (error) {
         if (requestId !== contentWorkspaceState.loadRequestId) return;
 
@@ -1555,6 +1573,7 @@ window.ContentWorkspace = {
           contentWorkspaceState.hasMore = false;
         }
         setWorkspaceMessage(error.message, "error");
+        return false;
       } finally {
         if (requestId === contentWorkspaceState.loadRequestId) {
           contentWorkspaceState.isLoading = false;
@@ -1836,7 +1855,7 @@ window.ContentWorkspace = {
       contentWorkspaceEditRoutes,
       contentWorkspaceApiJson: (...args) => contentWorkspaceApiJson(...args),
     });
-    const { createContentWorkspaceBottomActions, saveContentWorkspaceChanges } =
+    const { createContentWorkspaceActionBar, saveContentWorkspaceChanges } =
       window.ContentWorkspaceActions.create({
         onArticleCreated: (article) => {
           contentWorkspaceState.newArticle = null;
@@ -1891,6 +1910,50 @@ window.ContentWorkspace = {
           canManageContentWorkspaceRsvps(...args),
       });
     const { loadRevisionHistory } = window.ContentWorkspaceHistory.create({
+      async revertRevision(item, revision, version) {
+        if (disposed || contentWorkspaceState.isActing || contentWorkspaceState.isUploading) return false;
+        if (getSelectedContentWorkspaceItem()?._id !== item._id) return false;
+        if (hasUnsavedContentWorkspaceChanges()) {
+          throw new Error(getText("content_revision_unsaved", "Save or discard your unsaved edits before reverting a revision."));
+        }
+        contentWorkspaceState.isActing = 1;
+        contentWorkspaceDetail.inert = true;
+        try {
+          const confirmed = await window.CMCENModal.confirm(
+            getText("content_revision_confirm", "Restore the changed text to its previous value? This creates a new revision and audit entry. Newer edits will not be overwritten."),
+            {
+              title: getText("content_revision_revert", "Revert this change"),
+              confirmText: getText("content_revision_revert", "Revert this change"),
+              destructive: true,
+            },
+          );
+          if (!confirmed || disposed || getSelectedContentWorkspaceItem()?._id !== item._id) return false;
+          await contentWorkspaceApiJson(
+            `/api/admin/content/${encodeURIComponent(item.type)}/${encodeURIComponent(item._id)}/revisions/${encodeURIComponent(revision._id)}/revert`,
+            { method: "POST", body: { version } },
+          );
+          discardContentWorkspaceDrafts(item);
+          const refreshed = await loadContentWorkspace({ preserveSelection: true });
+          if (refreshed) {
+            showWorkspaceSuccess(getText("content_revision_success", "Change reverted. A new revision and audit entry were recorded."));
+          } else {
+            setWorkspaceMessage(getText("content_revision_reload_failed", "Change reverted, but content could not be reloaded. Refresh the page before editing."), "error");
+          }
+          return true;
+        } catch (error) {
+          // A lost response can follow a committed revert. Refresh before any
+          // further edits instead of leaving an old editor over newer content.
+          if (!disposed) {
+            discardContentWorkspaceDrafts(item);
+            await loadContentWorkspace({ preserveSelection: true });
+            setWorkspaceMessage(error.message, "error");
+          }
+          throw error;
+        } finally {
+          contentWorkspaceDetail.inert = false;
+          contentWorkspaceState.isActing = 0;
+        }
+      },
       getText: (...args) => getText(...args),
       setWorkspaceTranslatedText: (...args) =>
         setWorkspaceTranslatedText(...args),
@@ -1930,6 +1993,7 @@ window.ContentWorkspace = {
       },
       dispose() {
         disposed = true;
+        detailHeaderObserver?.disconnect();
         contentWorkspaceState.loadRequestId++;
         lifecycle.abort();
         window.clearTimeout(contentWorkspaceSearchTimeout);

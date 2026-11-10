@@ -9,6 +9,7 @@ const LastPostMessage = require('../models/LastPostMessage');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const { writeContentUpdateAudit } = require('../services/content-audit');
 const { recordContentRevision } = require('../services/content-revisions');
 const {
   getScheduledPublicationDate,
@@ -882,32 +883,15 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       : null;
 
     await lastPost.save();
-    await linkLastPostImageToMediaAsset(lastPost);
 
-    await writeAuditLog({
+    await writeContentUpdateAudit({
       req,
-      action: 'content.created',
-      actor: req.user,
+      content: lastPost,
+      previousStatus,
       targetType: 'lastPost',
-      target: lastPost._id,
       targetSnapshot: getLastPostSnapshot(lastPost),
-      metadata: {
-        source: 'resubmit',
-        status: lastPost.status,
-      },
     });
-
-    if (lastPost.status === 'published' && previousStatus !== 'published') {
-      await writeAuditLog({
-        req,
-        action: 'content.published',
-        actor: req.user,
-        targetType: 'lastPost',
-        target: lastPost._id,
-        targetSnapshot: getLastPostSnapshot(lastPost),
-        metadata: { source: 'update' },
-      });
-    }
+    await linkLastPostImageToMediaAsset(lastPost);
 
     return res.json({
       message:

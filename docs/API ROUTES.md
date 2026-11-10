@@ -323,6 +323,22 @@ Mounted at `/api/analytics`.
 
 Mounted at `/api/audit-logs`.
 
+Content visibility actions use `content.hidden` and `content.restored` for
+articles, events, retirement notices, Last Post notices, and comments. Their
+metadata records `previousStatus` and `status`; hide also retains its reason,
+and restore retains `restoredStatus`. Restoring a draft is not publication.
+Full content edits use `content.updated`, not `content.created`, with the source
+and before/after status. Edits that enter or leave published status also write
+`content.published` or `content.unpublished`; editing an already-published post
+does not report another publication. Failed authorization, validation, and
+repeated hide/restore requests do not write successful-action entries.
+Audit entries retain actor, target, timestamp, and trusted request IP. They are
+written after the content save and before ancillary media/revision work for
+full edits, so a later ancillary error does not conceal a committed edit.
+The audit UI includes filters for these actions, staff/review/detail edits,
+article review flags, editorial notes, articles, and Last Post notices.
+Existing historical entries are not rewritten or backfilled.
+
 JSON entries include `targetPublicUrl`: the current published retirement or Last
 Post page, or a published comment's current published parent page. It is empty for
 missing, deleted, hidden, unpublished or unsupported targets. Resolution uses the
@@ -405,7 +421,8 @@ in backup storage, while encryption and database connections come from
 | -------- | -------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`    | `/api/admin/review-counts`                   | Authenticated + `canReviewAndPublish`                                         | Return review counts for submissions still awaiting a decision. Scheduled Events, Last Post notices, and retirement messages are excluded.                                                                                                                                                                                                                                                                                                     |
 | `GET`    | `/api/admin/content`                         | Authenticated + `canReviewAndPublish`, or `canManageNews` for `newsArticle` only | List staff-only workspace records with editable metadata, submission contact, and publication-authorization details. Event records include RSVP enablement and deadline settings. Query: `type=all\|event\|retirementMessage\|lastPost\|newsArticle\|comment`, `status=all\|draft\|pending\|scheduled\|published\|rejected\|hidden`, `translation=all\|missing-any\|missing-en\|missing-fr` for public copy that has a missing translation (comments are excluded from translation-only results), case-insensitive `search` across the title, name, and public text, `limit` 1-100, an opaque `cursor` returned by the prior page, and optional `id` for one record. `scheduled` is a workspace-only view of pending Events, Last Post notices, retirement messages, and draft news articles with a scheduled publication date; `pending` and `draft` exclude their scheduled records. Responses include `hasMore` and `nextCursor` for Load more pagination; when `type=all`, results are limited to the caller’s permitted content types. Each record includes lifecycle state, the original state for removed content, and a rejection reason when applicable. |
-| `GET`    | `/api/admin/content/:contentType/:contentId/revisions` | Authenticated + `canReviewAndPublish`, or `canManageNews` for `newsArticle` only | List the last 100 staff-authored revisions, including private editorial-note changes, for an event, retirement message, Last Post notice, comment, or news story. Revision snapshots exclude submitter contact details. |
+| `GET`    | `/api/admin/content/:contentType/:contentId/revisions` | Authenticated + `canReviewAndPublish`, or `canManageNews` for `newsArticle` only | Returns `{ revisions, version }` for the last 100 staff-authored revisions, including private editorial-note changes. Each revision includes `canRevert` and `revertReason`; `version` is an opaque current-content token, or null for unversioned legacy content. Pending/failed/conflicted revert records are explicitly marked with `revertState` and cannot be reverted. Revision snapshots exclude submitter contact details. |
+| `POST` | `/api/admin/content/:contentType/:contentId/revisions/:revisionId/revert` | Authenticated + `canReviewAndPublish`, or `canManageNews` for `newsArticle` only | Accepts only `{ version }` from history. Restores trusted recorded before-values for supported plain-text revisions, never client-supplied replacement values. Returns `{ message, revisionId, version }`. Rejects unsupported/missing snapshots, changed snapshot fields, stale versions, and disallowed current statuses with 409; invalid payloads with 400; missing content/revisions with 404. Creates a reverse revision with `revertedRevisionId` and a `content.reverted` audit containing before/after snapshots. Publication, contact details, and unaffected languages remain unchanged. |
 | `PATCH`  | `/api/admin/content/newsArticle/:contentId/review`          | Authenticated + `canManageNews`                                                  | Save `{ needsReview: boolean, note: string }` (maximum 4100 characters, enough to retain two legacy 2000-character notes with language labels). Independent of publication. Clearing the flag retains the submitted note and revision/audit history. Workspace items expose private `articleReview` including retained `legacyNotes`; `flagged=true` filters articles before pagination and composes with other filters. Until shared state is saved, nonempty latest EN/FR notes are combined with labels and imply Needs review. No database migration or role grants required.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `PATCH` | `/api/admin/content/:contentType/:contentId/editorial-note` | Authenticated + `canReviewAndPublish`, or `canManageNews` for `newsArticle` only | Save `{ language: "en" or "fr", note: string }` (maximum 2000 characters); empty text clears it. Notes are private and returned as `editorialNotes` on authenticated workspace items. Changes retain revision and audit history; public content is unchanged. |
 | `GET`    | `/api/admin/roles`                           | Authenticated + `canManageRoles`                                              | List custom roles and permission catalog.                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -444,6 +461,23 @@ in backup storage, while encryption and database connections come from
 | `PATCH`  | `/api/admin/last-posts/:lastPostId/restore`  | Authenticated + `canRestoreContent` | Restore a removed Last Post notice to its previous status. |
 | `PATCH`  | `/api/admin/comments/:commentId/hide` | Authenticated + `canHideContent`, or original owner + `canDeleteOwnContent` | Remove a non-pending comment from public view without deleting its record. Pending comments must be published, rejected, or deleted. An optional `reason` is retained in the audit log. |
 | `PATCH`  | `/api/admin/comments/:commentId/restore` | Authenticated + `canRestoreContent` | Restore a removed comment to its previous status. |
+
+Revert supports plain text only: event title/location/description/registration,
+retirement and Last Post message/messages, news title/content, and comment body.
+Event reverts allow pending/published/hidden, notices allow
+draft/pending/published/hidden, news allows draft/published/hidden, and comments
+allow all existing states. Required-copy and model validation still apply.
+Changed formatting, newsletter blocks, media, status, personal details, and
+metadata are unavailable. A body with active formatting or newsletter blocks
+must be restored through its editor so the two representations stay consistent.
+
+Reverts work on standalone MongoDB: a pending reverse revision and audit intent
+are stored before an atomic version-checked content update. Successful attempts
+finalize both records. A `503` response includes `revisionId` and
+`contentChanged` (`true`, `false`, or `null` for an uncertain write outcome).
+Reload history and have an administrator review pending records before retrying;
+a `503` does not imply the content was unchanged. Pending records block further
+reverts, and failed/conflicted attempts are never offered as completed changes.
 
 ## Uploads and Media
 
@@ -724,6 +758,12 @@ was mailed. Both transitions record the acting user, timestamp, and audit entry.
 
 Mounted at `/api/events`.
 
+Event submissions require the authenticated account's rank, first name, last name,
+and email. Unit/organization is optional: `currentUnit` or `company` is copied when
+present, otherwise it stays blank. `createdBy` always references the authenticated
+submitter; caller-supplied attribution is ignored. Updates preserve the original
+submitter snapshot and account link.
+
 | Method  | Path                                  | Access                                | Purpose                                                                                                                                                                                                                            |
 | ------- | ------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`   | `/api/events`                         | Public                                | List published upcoming events, or published events overlapping a requested `from`/`to` calendar range. Results can be filtered by event type, organizing entity, and province or region.                                          |
@@ -903,6 +943,14 @@ Mounted at `/api/last-posts`.
 ## Retirement Messages and Comments
 
 Mounted at `/api/retirement-messages`.
+
+Retirement submissions require the authenticated account's first name, last name,
+and email. Submitter unit/organization is optional: `currentUnit` or `company` is
+copied when present, otherwise it stays blank. `createdBy` always references the
+authenticated submitter; caller-supplied attribution is ignored. Later edits keep
+that account link and the original optional unit snapshot, including a blank unit.
+The retiring member's details and any certificate-request unit are separate fields
+and retain their existing validation.
 
 | Method | Path | Access | Purpose |
 | ------- | ----------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |

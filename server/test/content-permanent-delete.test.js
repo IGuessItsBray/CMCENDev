@@ -138,7 +138,7 @@ function workspace({ permitted = true, confirmed = true, fail = false } = {}) {
     loadContentWorkspace: async () => calls.push('reload'),
     setWorkspaceMessage: (message) => calls.push(message),
   });
-  const section = actions.createContentWorkspaceBottomActions({
+  const section = actions.createContentWorkspaceActionBar({
     type: 'event',
     _id: '123',
     status: 'pending',

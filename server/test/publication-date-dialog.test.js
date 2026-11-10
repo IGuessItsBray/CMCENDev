@@ -86,7 +86,7 @@ function workspace() {
     archived = true,
   } = {}) {
     buttons.length = 0;
-    actions.createContentWorkspaceBottomActions({
+    actions.createContentWorkspaceActionBar({
       _id: id,
       type,
       status: 'draft',

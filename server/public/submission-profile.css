@@ -1,0 +1,42 @@
+.submission-profile-notice {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border-color, #c9cfd5);
+  border-inline-start: 4px solid #a67820;
+  border-radius: 0.5rem;
+  color: inherit;
+  background: color-mix(in srgb, #b7892f 8%, transparent);
+  line-height: 1.5;
+}
+
+.submission-profile-notice[hidden] {
+  display: none;
+}
+
+.submission-profile-notice p {
+  margin: 0.5rem 0 0;
+}
+
+.submission-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 0.75rem;
+}
+
+.submission-profile-actions button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.submission-profile-notice:focus-visible,
+.submission-profile-actions :focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}

@@ -85,6 +85,7 @@ let editingRetirementMessage = null;
 let editingRetirementMessages = {};
 let activeRetirementMessageLanguage = retirementMessageLanguage?.value || "en";
 let currentRetirementUser = null;
+let retirementProfileNotice = null;
 let certificateFamilyMemberSequence = 0;
 
 const RETIREE_RANK_OPTIONS = Array.from(retireeRank.options)
@@ -943,6 +944,17 @@ async function verifyRetirementAccess() {
 
     currentRetirementUser = user;
     populateRetirementSubmitterFromProfile(user);
+    retirementProfileNotice = window.CMCENSubmissionProfile.createNotice({
+      form: retirementSubmitForm,
+      type: "retirement",
+      user,
+      getToken: () => CMCENUtils.requireAuthToken(),
+      isEditing: () => Boolean(editingRetirementMessageId),
+      onRefresh: (profile) => {
+        currentRetirementUser = profile;
+        populateRetirementSubmitterFromProfile(profile);
+      },
+    });
 
     const canBypassReview =
       !personalSubmission && user.permissions?.canBypassReviewStages === true;
@@ -1117,6 +1129,7 @@ async function loadRetirementMessageForEditing() {
 
 retirementSubmitForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (retirementSubmitButton.disabled) return;
 
   clearRetirementFormMessage();
 
@@ -1138,6 +1151,7 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
   setRetirementSubmitting(true);
 
   try {
+    if (!(await retirementProfileNotice.check({ focus: true }))) return;
     const uploadResult = await uploadRetirementPhoto();
     formData.photoUrl = uploadResult.photoUrl;
     formData.photoDisplayUrl = uploadResult.photoDisplayUrl;

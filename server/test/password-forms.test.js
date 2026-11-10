@@ -43,7 +43,22 @@ test('browser and server share Unicode/byte boundaries and policy-invalid passwo
   );
   assert.equal(
     window.CMCENPasswordPolicy.getPasswordStrength('Aa1!aaaaaaaa'),
+    1,
+  );
+  // A long passphrase can score well without requiring every character class.
+  assert.equal(
+    window.CMCENPasswordPolicy.getPasswordStrength(
+      'lantern meadow orbit velvet',
+    ),
     5,
+  );
+  assert.equal(
+    window.CMCENPasswordPolicy.getPasswordStrength('abcdefgabcdefgabcdefg'),
+    1,
+  );
+  assert.equal(
+    window.CMCENPasswordPolicy.getPasswordStrength('a'.repeat(72)),
+    1,
   );
   assert.ok(browser('fr').getNewPasswordError('short').includes('12'));
   assert.ok(browser('fr').getNewPasswordError('short').includes('72'));

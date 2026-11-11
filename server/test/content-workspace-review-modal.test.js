@@ -37,7 +37,7 @@ const reviewActions = workspaceScript.slice(
 test('offers immediate, available original date, or scheduled publication before the button', () => {
   assert.match(
     reviewActions,
-    /document\.createElement\("select"\)[\s\S]*?\["now", "content_workspace_publish_now"[\s\S]*?\[\["original", "content_workspace_publish_original"[\s\S]*?\[\["schedule", "content_workspace_schedule_publish"[\s\S]*?publicationChoice\.append\(option\)/u,
+    /document\.createElement\("select"\)[\s\S]*?\["now", "content_workspace_publish_now"[\s\S]*?\[\["original", "content_workspace_original_publication_date"[\s\S]*?\[\["schedule", "content_workspace_schedule_publish"[\s\S]*?publicationChoice\.append\(option\)/u,
   );
   assert.doesNotMatch(reviewActions, /content_workspace_publish_timing[\s\S]*?CMCENModal\.choose/u);
   assert.doesNotMatch(reviewActions, /value: "custom"/u);

@@ -4,6 +4,80 @@ const assert = require('node:assert/strict'),
   vm = require('node:vm'),
   { test } = require('node:test');
 const { Element } = require('./helpers/dashboard-dom');
+test('student is the default and instructor selection reaches manual PDFs and public requests with renewed review', async () => {
+  for (const requestMode of [false, true]) {
+    const page = setup(undefined, false, requestMode);
+    assert.equal(page.control('awardRole').value, 'student');
+    assert.deepEqual(
+      page.control('awardRole').children.map((option) => option.value),
+      ['student', 'instructor'],
+    );
+    await page.fill();
+    await reviewed(page);
+    page.control('awardRole').value = 'instructor';
+    await page.control('awardRole').fire('change');
+    assert.equal(page.control('reviewed').checked, false);
+    await page.control('download').fire('click');
+    assert.equal(page.calls.length, 0);
+    await page.document.fire('languagechange');
+    assert.equal(page.control('awardRole').value, 'instructor');
+    await reviewed(page);
+    await page.control('download').fire('click');
+    const payload = requestMode ? page.calls[0].body.award : page.calls[0].body;
+    assert.equal(payload.awardRole, 'instructor');
+    page.controller.dispose();
+  }
+  const retirement = setup(undefined, true, true);
+  assert.equal(retirement.control('awardRole'), null);
+  retirement.controller.dispose();
+});
+
+test('an uncertain instructor request locks the role and retries the same snapshot', async () => {
+  let attempt = 0;
+  const page = setup(async () => {
+    if (++attempt === 1) throw new Error('Network');
+    return { certificateRequest: { id: 'r1', status: 'pending' } };
+  }, false, true);
+  await page.fill();
+  page.control('awardRole').value = 'instructor';
+  await page.control('awardRole').fire('change');
+  await reviewed(page);
+  await page.control('download').fire('click');
+  assert.equal(page.control('awardRole').disabled, true);
+  await page.document.fire('languagechange');
+  assert.equal(page.control('awardRole').value, 'instructor');
+  assert.equal(page.control('awardRole').disabled, true);
+  await page.control('download').fire('click');
+  assert.deepEqual(page.calls[0].body, page.calls[1].body);
+  assert.equal(page.calls[1].body.award.awardRole, 'instructor');
+  page.controller.dispose();
+});
+
+test('manual PDF downloads honor server filenames for award and French retirement certificates', async () => {
+  for (const [retirement, name, header] of [
+    [false, '20261110-UU-1000-C&E_Corporal_Calayag.pdf', 'ascii'],
+    [true, '20261110-UU-1000-C&E-FR-Caporale_Bélanger_CD.pdf', 'utf8'],
+  ]) {
+    const page = setup(
+      async () => ({
+        headers: new Headers({
+          'Content-Disposition':
+            header === 'ascii'
+              ? `attachment; filename="${name}"`
+              : `attachment; filename="fallback.pdf"; filename*=UTF-8''${encodeURIComponent(name)}`,
+        }),
+        blob: async () => ({ type: 'application/pdf' }),
+      }),
+      retirement,
+    );
+    if (!retirement) await page.fill();
+    await reviewed(page);
+    await page.control('download').fire('click');
+    assert.equal(page.downloads[0], name);
+    assert.equal(page.urls.length, page.revoked.length);
+    page.controller.dispose();
+  }
+});
 test('expired submission sessions retain the same request for retry after new-tab sign-in', async () => {
   let expired = true;
   const page = setup(
@@ -112,30 +186,223 @@ test('retirement request submits structured member data without PDF actions', as
   assert.equal(page.calls[0].body.award, undefined);
   page.controller.dispose();
 });
+
+for (const retirement of [false, true]) {
+  const kind = retirement ? 'retirement' : 'trusted-to-serve';
+  test(`${kind} requests require the custom needed-by date and preserve it across language changes`, async () => {
+    const page = setup(
+      async () => ({ certificateRequest: { id: 'r1', status: 'pending' } }),
+      retirement,
+      true,
+      true,
+    );
+    const first = page.picker('neededByDate');
+    assert.equal(first.options.dateName, 'neededByDate');
+    assert.equal(first.options.includeTime, false);
+    assert.equal(first.trigger.type, 'button');
+    assert.equal(
+      first.trigger.getAttribute('aria-label'),
+      'trusted_request_neededByDate',
+    );
+    assert.equal(first.trigger.parent.parent.htmlFor, first.trigger.id);
+    assert.equal(
+      page.root
+        .querySelectorAll('input')
+        .some((input) => input.type === 'date'),
+      false,
+    );
+
+    await reviewed(page);
+    await page.root.querySelector('form').fire('submit');
+    assert.equal(page.calls.length, 0);
+    assert.equal(page.document.activeElement, first.trigger);
+    assert.equal(first.trigger.getAttribute('aria-invalid'), 'true');
+    const error = first.picker.parent
+      .querySelectorAll('span')
+      .find(
+        (span) => span.id === first.trigger.getAttribute('aria-describedby'),
+      );
+    assert.equal(error.hidden, false);
+    assert.equal(error.textContent, 'validation_field_required');
+
+    first.picker.setValue({ date: '2026-11-20', emit: true });
+    assert.equal(page.control('reviewed').checked, false);
+    assert.equal(first.trigger.getAttribute('aria-invalid'), null);
+    assert.equal(error.hidden, true);
+    assert.equal(page.controller.hasUnsavedChanges(), true);
+    page.window.translate = (key) => `fr:${key}`;
+    await page.document.fire('languagechange');
+    const translated = page.picker('neededByDate');
+    assert.equal(first.destroyed, 1);
+    assert.equal(translated.picker.getValue().date, '2026-11-20');
+    assert.equal(
+      translated.trigger.getAttribute('aria-label'),
+      'fr:trusted_request_neededByDate',
+    );
+    await reviewed(page);
+    await page.control('download').fire('click');
+    assert.equal(page.calls[0].url, `/api/certificate-requests/${kind}`);
+    assert.equal(page.calls[0].body.neededByDate, '2026-11-20');
+    assert.equal(page.control('download').disabled, true);
+    assert.equal(translated.trigger.disabled, false);
+
+    translated.picker.setValue({ date: '', emit: true });
+    assert.equal(page.control('reviewed').checked, false);
+    assert.equal(page.control('download').disabled, false);
+    await reviewed(page);
+    await page.control('download').fire('click');
+    assert.equal(page.calls.length, 1);
+    translated.picker.setValue({ date: '2026-11-21', emit: true });
+    await reviewed(page);
+    await page.control('download').fire('click');
+    assert.equal(page.calls[1].body.neededByDate, '2026-11-21');
+    assert.notEqual(page.calls[0].body.requestId, page.calls[1].body.requestId);
+    page.controller.dispose();
+    assert.ok(page.pickers.every((picker) => picker.destroyed === 1));
+  });
+
+  test(`${kind} needed-by picker locks its open calendar and preserves an uncertain submission for retry`, async () => {
+    let reject,
+      attempt = 0;
+    const page = setup(
+      () =>
+        ++attempt === 1
+          ? new Promise((_, no) => {
+              reject = no;
+            })
+          : Promise.resolve({
+              certificateRequest: { id: 'r1', status: 'pending' },
+            }),
+      retirement,
+      true,
+      true,
+    );
+    const first = page.picker('neededByDate');
+    first.picker.setValue({ date: '2026-11-20', emit: true });
+    // The shared picker moves its open popover out of the form into body.
+    first.picker.children = first.picker.children.filter(
+      (child) => child !== first.popover,
+    );
+    page.document.body.append(first.popover);
+    await reviewed(page);
+    const pending = page.control('download').fire('click');
+    assert.equal(first.trigger.disabled, true);
+    assert.ok(first.popover.elements.every((control) => control.disabled));
+    first.picker.setValue({ date: '2026-12-01', emit: true });
+    assert.equal(first.picker.getValue().date, '2026-11-20');
+    assert.equal(page.calls[0].body.neededByDate, '2026-11-20');
+    await page.control('download').fire('click');
+    assert.equal(page.calls.length, 1);
+    reject(new Error('Network'));
+    await pending;
+    assert.equal(first.trigger.disabled, true);
+    assert.equal(page.control('download').disabled, false);
+    await page.document.fire('languagechange');
+    const retry = page.picker('neededByDate');
+    assert.equal(first.destroyed, 1);
+    assert.equal(retry.trigger.disabled, true);
+    assert.equal(retry.picker.getValue().date, '2026-11-20');
+    await page.control('download').fire('click');
+    assert.deepEqual(page.calls[1].body, page.calls[0].body);
+    assert.equal(retry.trigger.disabled, false);
+    assert.ok(retry.popover.elements.every((control) => !control.disabled));
+    page.controller.dispose();
+    assert.ok(page.pickers.every((picker) => picker.destroyed === 1));
+  });
+
+  test(`${kind} needed-by field retains required native fallback when the custom picker is unavailable`, async () => {
+    const page = setup(
+      async () => ({ certificateRequest: { id: 'r1', status: 'pending' } }),
+      retirement,
+      true,
+    );
+    const needed = page.root.querySelector('.trusted-request-neededByDate');
+    assert.equal(needed.type, 'date');
+    assert.equal(needed.required, true);
+    assert.equal(needed.name, 'neededByDate');
+    page.root.querySelector('form').reportValidity = () =>
+      Boolean(needed.value);
+    await reviewed(page);
+    await page.control('download').fire('click');
+    assert.equal(page.calls.length, 0);
+    needed.value = '2026-11-20';
+    await needed.fire('input');
+    await reviewed(page);
+    await page.control('download').fire('click');
+    assert.equal(page.calls[0].body.neededByDate, '2026-11-20');
+    page.controller.dispose();
+  });
+}
+
 function setup(
   api = async () => ({ blob: async () => ({ type: 'application/pdf' }) }),
   memberRetirement = false,
   requestMode = false,
+  customPicker = false,
 ) {
   const root = new Element('div'),
     document = new Element('document'),
     calls = [],
     urls = [],
     revoked = [],
-    downloads = [];
+    downloads = [],
+    pickers = [];
   document.body = new Element('body');
   document.createElement = (tag) => {
     const element = new Element(tag);
     element.click = () => downloads.push(element.download);
     element.remove = () => {};
+    element.focus = () => {
+      document.activeElement = element;
+    };
     return element;
   };
   const window = {
+    CMCENUtils: require('./helpers/app-utils')({
+      Intl: {
+        DateTimeFormat: () => ({
+          resolvedOptions: () => ({ timeZone: 'America/Toronto' }),
+        }),
+      },
+    }),
     crypto: require('node:crypto'),
     translate: (key) => key,
     CMCENRanks: require('../public/person-rank-options'),
     CMCENAwardRanks: require('../public/trusted-to-serve-ranks'),
   };
+  if (customPicker)
+    window.CMCENDateTimePicker = {
+      create(options) {
+        const picker = document.createElement('div'),
+          trigger = document.createElement('button'),
+          popover = document.createElement('div'),
+          input = document.createElement('input');
+        trigger.type = 'button';
+        trigger.className = 'cmcen-date-time-trigger';
+        trigger.setAttribute('aria-label', options.label);
+        popover.className = 'cmcen-date-time-popover';
+        popover.append(
+          ...['button', 'input', 'select'].map((tag) =>
+            document.createElement(tag),
+          ),
+        );
+        input.type = 'hidden';
+        input.name = options.dateName || `${options.name}Date`;
+        input.value = options.date;
+        picker.append(input, trigger, popover);
+        const record = { options, picker, trigger, popover, destroyed: 0 };
+        picker.setValue = ({ date, emit = false }) => {
+          input.value = date;
+          if (emit) options.onInput({ date });
+        };
+        picker.getValue = () => ({ date: input.value });
+        picker.destroy = () => {
+          record.destroyed++;
+        };
+        pickers.push(record);
+        return picker;
+      },
+    };
   let denied = 0,
     controller;
   vm.runInNewContext(
@@ -191,6 +458,7 @@ function setup(
   return {
     root,
     document,
+    window,
     calls,
     urls,
     revoked,
@@ -198,6 +466,11 @@ function setup(
     controller,
     control,
     fill,
+    pickers,
+    picker: (name) =>
+      pickers.findLast(
+        (entry) => entry.options.name === name && !entry.destroyed,
+      ),
     denied: () => denied,
     status: () => root.querySelector('p').textContent,
   };
@@ -271,6 +544,10 @@ test('manual families reuse explicit relationship options and download individua
   }
   await reviewed(page);
   await page.root.querySelectorAll('.manual-family-download')[1].fire('click');
+  assert.equal(
+    page.calls[0].url,
+    '/api/certificate-requests/retirement.pdf?timeZone=America%2FToronto&download=1',
+  );
   assert.equal(page.calls[0].body.documentKind, 'family');
   assert.equal(page.calls[0].body.familyIndex, 1);
   assert.deepEqual(
@@ -285,6 +562,7 @@ test('manual families reuse explicit relationship options and download individua
   );
   await page.root.querySelector('.manual-packet-download').fire('click');
   assert.equal(page.calls[1].body.documentKind, 'packet');
+  assert.equal(page.calls[1].url, page.calls[0].url);
   await page.root.querySelector('.manual-family-remove').fire('click');
   assert.equal(page.control('reviewed').checked, false);
   assert.equal(
@@ -316,7 +594,7 @@ test('manual retirement downloads are private, independent and require renewed d
   await page.control('download').fire('click');
   assert.equal(
     page.calls[0].url,
-    '/api/certificate-requests/retirement.pdf?download=1',
+    '/api/certificate-requests/retirement.pdf?timeZone=America%2FToronto&download=1',
   );
   assert.equal(page.calls[0].body.ceBranchEnrollmentDate, '1984-02-29');
   assert.equal(page.calls[0].body.postNominals, '');
@@ -339,7 +617,10 @@ test('award downloads preserve explicit choices across language changes without 
   assert.equal(page.calls[0].parseJson, false);
   assert.equal(page.calls[0].method, 'POST');
   assert.equal(page.calls[0].body.frPronoun, 'elle');
-  assert.match(page.calls[0].url, /download=1$/);
+  assert.equal(
+    page.calls[0].url,
+    '/api/certificate-requests/trusted-to-serve.pdf?timeZone=America%2FToronto&download=1',
+  );
   assert.equal(page.downloads.length, 1);
   assert.equal(page.root.querySelector('iframe'), null);
   await page.document.fire('languagechange');

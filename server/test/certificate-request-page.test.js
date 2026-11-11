@@ -108,7 +108,19 @@ test('management-only custom roles retain staff access without request forms', a
     ['staff'],
   );
   assert.equal(page.mounts[0].showRequestForm, false);
+  assert.equal(page.mounts[0].showSubmittedRequests, false);
   assert.equal(page.calls.length, 1);
+});
+test('staff with submission permission see creation tools, not public request forms, in the staff workspace', async () => {
+  const page = setup({
+    permissions: {
+      canManageCertificateRequests: true,
+      canSubmitCertificateRequests: true,
+    },
+  });
+  await flush();
+  assert.deepEqual(page.mounts.map((entry) => entry.type), ['staff']);
+  assert.equal(page.mounts[0].showRequestForm, false);
 });
 test('history restoration reloads disposed forms and rechecks the session', async () => {
   const page = setup({

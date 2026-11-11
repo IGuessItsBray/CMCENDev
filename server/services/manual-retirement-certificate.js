@@ -71,6 +71,7 @@ function getManualRetirementRequest(input) {
     familyMembers: [],
     member: {
       fullName: `${name('firstName')} ${name('lastName')}`,
+      lastName: name('lastName'),
       rank: input.fullRankEn,
       rankLanguage: input.rankLanguage,
       decorations: postNominals.trim()

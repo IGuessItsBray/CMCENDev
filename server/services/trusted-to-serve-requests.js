@@ -98,6 +98,7 @@ function getTrustedToServeRequest(body) {
           'firstName',
           'lastName',
           'postNominals',
+          'awardRole',
           'fullRankEn',
           'presentationDate',
           'frPronoun',
@@ -119,6 +120,8 @@ function getTrustedToServeRequest(body) {
     fullRankEn: award.fullRankEn,
     presentationDate: award.isoDate,
     frPronoun: award.frPronoun,
+    // Omit the default from the fingerprint to preserve pre-role student retries.
+    ...(award.awardRole === 'instructor' ? { awardRole: award.awardRole } : {}),
   };
   const fingerprint = createHash('sha256')
     .update(
@@ -132,7 +135,7 @@ function getTrustedToServeRequest(body) {
     )
     .digest('hex');
   return {
-    trustedToServe,
+    trustedToServe: { ...trustedToServe, awardRole: award.awardRole },
     mailingAddress,
     relationship,
     fingerprint,
@@ -233,11 +236,14 @@ function getRetirementRequest(body) {
   const error = validateCertificateRequestPayload(cleaned);
   if (error) invalid(error);
   const member = { ...retirement.member, ...cleaned.member, tradeRole };
+  // Preserve the existing idempotency hash for submissions made before surname
+  // persistence was introduced. The surname is already represented in fullName.
+  const { lastName: _lastName, ...fingerprintMember } = member;
   const fingerprint = createHash('sha256')
     .update(
       JSON.stringify({
         certificateType: 'retirement',
-        member,
+        member: fingerprintMember,
         familyMembers: cleaned.familyMembers,
         mailingAddress: envelope.mailingAddress,
         relationship: envelope.relationship,

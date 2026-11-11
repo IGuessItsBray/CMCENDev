@@ -29,6 +29,30 @@ function loadFunction(name, next, context) {
   return vm.runInNewContext(`(${source.slice(start, end).trim()})`, context);
 }
 
+test('keyboard order follows saving and publication before destructive actions', () => {
+  const actionsSource = fs.readFileSync(
+    path.join(__dirname, '../public/content-workspace-actions.js'), 'utf8',
+  );
+  const start = actionsSource.indexOf('function createContentWorkspaceActionBar(');
+  const end = actionsSource.indexOf('async function saveContentWorkspaceChanges(', start);
+  const removal = element('div');
+  removal.append(element('button'));
+  const review = element('div');
+  review.append(element('select'), element('button'));
+  const create = vm.runInNewContext(`(${actionsSource.slice(start, end).trim()})`, {
+    document: { createElement: element },
+    createRemovalActions: () => removal,
+    createContentWorkspaceReviewActions: () => review,
+    setWorkspaceTranslatedText() {},
+  });
+  const bar = create({ type: 'event' }, { canSave: true });
+  const row = bar.children[0];
+  assert.equal(row.children.at(-1), removal);
+  const primary = row.children[0];
+  assert.equal(primary.children.at(-1), review);
+  assert.equal(primary.children[0].children[0].dataset.contentWorkspaceSave, 'true');
+});
+
 test('submission controls and source links share the header; history stays after the content', () => {
   for (const type of ['event', 'retirementMessage', 'lastPost', 'newsArticle', 'comment']) {
     const detail = element('section');

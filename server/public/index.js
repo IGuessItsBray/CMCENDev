@@ -167,8 +167,8 @@ const navLinks = {
       {
         route: "/about_museum_foundation.html",
         label: {
-          en: "About the C&E Museum & Foundation",
-          fr: "Musée et Fondation des C et E",
+          en: "About the Foundation",
+          fr: "À propos de la Fondation",
         },
       },
       { route: "/leadership", label: { en: "Leadership", fr: "Leadership" } },
@@ -820,22 +820,6 @@ function setupContributeLauncher(closeMobileMenu = () => {}) {
         description: getInterfaceTranslation(
           "contribute_submit_retirement_description",
           "Recognize a retiring member with a message for review.",
-        ),
-        className: "is-contribute-retirement",
-        icon: getContributeChoiceIcon("retirement"),
-      });
-    }
-
-    if (contributePermissions.canSubmitCertificateRequests === true) {
-      choices.push({
-        value: "/certificates",
-        label: getInterfaceTranslation(
-          "contribute_submit_trusted_request",
-          "Request certificates",
-        ),
-        description: getInterfaceTranslation(
-          "contribute_submit_trusted_request_description",
-          "Send recipient and delivery details to the branch certificate team.",
         ),
         className: "is-contribute-retirement",
         icon: getContributeChoiceIcon("retirement"),
@@ -1606,8 +1590,7 @@ async function updateAuthRestrictedItems() {
     contributePermissions = user.permissions || {};
     document.getElementById("contributeNavigation").hidden =
       contributePermissions.canCreateDrafts !== true &&
-      contributePermissions.canSubmitRetirementMessages !== true &&
-      contributePermissions.canSubmitCertificateRequests !== true;
+      contributePermissions.canSubmitRetirementMessages !== true;
 
     authRequiredItems.forEach((element) => {
       element.hidden = false;

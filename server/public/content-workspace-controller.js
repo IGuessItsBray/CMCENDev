@@ -1642,7 +1642,7 @@ window.ContentWorkspace = {
         .querySelectorAll("[data-content-workspace-original-date]")
         .forEach((option) => {
           const date = new Date(option.dataset.contentWorkspaceOriginalDate);
-          option.textContent = `${getText("content_workspace_publish_original", "Publish now with original date")} (${date.toLocaleDateString(getContentWorkspaceLocale(), { timeZone: "UTC" })})`;
+          option.textContent = `${getText("content_workspace_original_publication_date", "Original publication date")} (${date.toLocaleDateString(getContentWorkspaceLocale(), { timeZone: "UTC" })})`;
         });
       updateListToggle();
       renderReviewQueues();

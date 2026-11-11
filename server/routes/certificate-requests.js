@@ -1,4 +1,9 @@
 const express = require('express');
+const {
+  certificateFilename,
+  certificateDisposition,
+  certificateTimeZone,
+} = require('../services/certificate-filenames');
 const { FAMILY_WORDING_OPTIONS } = require('../config/certificate-wording');
 const {
   generateTrustedToServe,
@@ -25,6 +30,19 @@ const {
 } = require('../services/content-snapshots');
 
 const router = express.Router();
+function validateCertificateTimeZone(req, res, next) {
+  try {
+    if (Object.keys(req.query).some((key) => key.startsWith('timeZone[')))
+      throw new RangeError('Invalid certificate time zone');
+    res.locals.certificateTimeZone = certificateTimeZone(req.query.timeZone);
+    next();
+  } catch {
+    return res.status(400).json({
+      code: 'certificate_time_zone_invalid',
+      error: 'Invalid certificate time zone',
+    });
+  }
+}
 const {
   getTrustedToServeRequest,
   getRetirementRequest,
@@ -116,7 +134,12 @@ router.post(
         targetType: 'certificateRequest',
         target: certificateRequest._id,
         targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
-        metadata: { certificateType },
+        metadata: {
+          certificateType,
+          ...(!isRetirement
+            ? { awardRole: input.trustedToServe.awardRole }
+            : {}),
+        },
       });
       return res
         .status(201)
@@ -161,6 +184,7 @@ router.post(
   },
   authMiddleware,
   requirePermission('canManageCertificateRequests'),
+  validateCertificateTimeZone,
   async (req, res) => {
     if (!/^[a-f0-9]{24}$/iu.test(req.params.certificateRequestId))
       return res.status(404).json({ error: 'Certificate request not found' });
@@ -205,13 +229,19 @@ router.post(
         targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
         metadata: {
           certificateKey: 'member',
+          awardRole: certificateRequest.trustedToServe.awardRole ?? 'student',
           reviewed: true,
           disposition: req.query.download === '1' ? 'attachment' : 'inline',
         },
       });
       res.set(
         'Content-Disposition',
-        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="trusted-to-serve-${certificateRequest._id}.pdf"`,
+        certificateDisposition(
+          certificateFilename(certificateRequest, {
+            timeZone: res.locals.certificateTimeZone,
+          }),
+          req.query.download === '1',
+        ),
       );
       return res.type('pdf').send(bytes);
     } catch (error) {
@@ -241,6 +271,7 @@ router.post(
   },
   authMiddleware,
   requirePermission('canManageCertificateRequests'),
+  validateCertificateTimeZone,
   async (req, res) => {
     if (req.query.download !== undefined && req.query.download !== '1')
       return res
@@ -280,7 +311,14 @@ router.post(
       });
       res.set(
         'Content-Disposition',
-        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="retirement-${kind}-${request.member.releaseDate}.pdf"`,
+        certificateDisposition(
+          certificateFilename(request, {
+            timeZone: res.locals.certificateTimeZone,
+            kind,
+            familyIndex: req.body.familyIndex,
+          }),
+          req.query.download === '1',
+        ),
       );
       return res.type('pdf').send(bytes);
     } catch (error) {
@@ -305,6 +343,7 @@ router.post(
   },
   authMiddleware,
   requirePermission('canManageCertificateRequests'),
+  validateCertificateTimeZone,
   async (req, res) => {
     if (req.query.download !== undefined && req.query.download !== '1')
       return res
@@ -330,6 +369,7 @@ router.post(
         },
         metadata: {
           presentationDate: data.isoDate,
+          awardRole: data.awardRole,
           frPronoun: data.frPronoun,
           frRankGrammar: data.frRankGrammar,
           reviewed: req.body.reviewed === true,
@@ -338,7 +378,13 @@ router.post(
       });
       res.set(
         'Content-Disposition',
-        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="trusted-to-serve-${data.isoDate}.pdf"`,
+        certificateDisposition(
+          certificateFilename(
+            { certificateType: 'trusted_to_serve', trustedToServe: data },
+            { timeZone: res.locals.certificateTimeZone },
+          ),
+          req.query.download === '1',
+        ),
       );
       return res.type('pdf').send(bytes);
     } catch (error) {
@@ -363,6 +409,7 @@ router.get(
   },
   authMiddleware,
   requirePermission('canManageCertificateRequests'),
+  validateCertificateTimeZone,
   async (req, res) => {
     if (!/^[a-f0-9]{24}$/iu.test(req.params.certificateRequestId)) {
       return res.status(404).json({ error: 'Certificate request not found' });
@@ -393,7 +440,12 @@ router.get(
       });
       res.set(
         'Content-Disposition',
-        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="retirement-member-${certificateRequest._id}.pdf"`,
+        certificateDisposition(
+          certificateFilename(certificateRequest, {
+            timeZone: res.locals.certificateTimeZone,
+          }),
+          req.query.download === '1',
+        ),
       );
       return res.type('pdf').send(pdf);
     } catch (error) {
@@ -423,6 +475,7 @@ router.post(
   },
   authMiddleware,
   requirePermission('canManageCertificateRequests'),
+  validateCertificateTimeZone,
   async (req, res) => {
     const isFamily = req.params.familyIndex !== undefined;
     const index = Number(req.params.familyIndex);
@@ -470,10 +523,16 @@ router.post(
           disposition: req.query.download === '1' ? 'attachment' : 'inline',
         },
       });
-      const kind = isFamily ? `family-${index}` : 'packet';
       res.set(
         'Content-Disposition',
-        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="retirement-${kind}-${certificateRequest._id}.pdf"`,
+        certificateDisposition(
+          certificateFilename(certificateRequest, {
+            timeZone: res.locals.certificateTimeZone,
+            kind: isFamily ? 'family' : 'packet',
+            familyIndex: index,
+          }),
+          req.query.download === '1',
+        ),
       );
       return res.type('pdf').send(bytes);
     } catch (error) {

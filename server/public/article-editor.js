@@ -346,7 +346,91 @@ window.ArticleEditor = (() => {
     return root;
   }
 
-  function create({ inputs, getText, api, canUpload, busy, sharedFigurePreview = false }) {
+  function documentControl({ api, getText, onChange, busy = () => {} }) {
+    const root = el("div", "article-document-control");
+    const status = el("p");
+    status.setAttribute("role", "status");
+    const help = el("p");
+    help.textContent = getText("article_document_upload_help", "PDF only, up to 20 MiB. Uploaded files are public by link immediately, even while the article is a draft. Do not upload private documents.");
+    const file = el("input");
+    file.type = "file";
+    file.accept = ".pdf,application/pdf";
+    file.hidden = true;
+    const upload = button("article_upload_document", () => file.click(), getText);
+    const select = el("select", "cmcen-control");
+    select.hidden = true;
+    select.setAttribute("aria-label", getText("article_uploaded_documents", "Choose an uploaded PDF"));
+    let pending = false, cursor = "";
+    const more = button("article_more_documents", () => load(true), getText);
+    more.hidden = true;
+    const choose = button("article_uploaded_documents", () => load(false), getText);
+    function setPending(value) {
+      pending = value;
+      for (const control of [upload, choose, more, select]) control.disabled = value;
+      busy(value);
+    }
+    async function load(append) {
+      if (pending || !root.isConnected) return;
+      setPending(true);
+      status.textContent = "";
+      try {
+        const result = await api(`/api/documents${append ? `?cursor=${encodeURIComponent(cursor)}` : ""}`);
+        if (!root.isConnected) return;
+        if (!append) select.replaceChildren(new Option(getText("article_uploaded_documents", "Choose an uploaded PDF"), ""));
+        for (const item of result.documents) {
+          if (window.NewsletterRenderer.safeUrl(item.url)) select.append(new Option(item.name, item.url));
+        }
+        cursor = result.nextCursor || "";
+        more.hidden = !cursor;
+        select.hidden = false;
+        if (!result.documents.length && !append)
+          status.textContent = getText("article_documents_empty", "No PDFs have been uploaded yet.");
+      } catch {
+        if (root.isConnected) status.textContent = getText("article_documents_error", "Could not load documents.");
+      } finally { setPending(false); }
+    }
+    select.addEventListener("change", () => {
+      if (!pending && select.value && window.NewsletterRenderer.safeUrl(select.value))
+        onChange({ href: select.value, label: select.selectedOptions[0].textContent });
+    });
+    file.addEventListener("change", async () => {
+      const selected = file.files?.[0];
+      if (!selected || pending || !root.isConnected) return;
+      if (!/\.pdf$/i.test(selected.name) || !selected.size || selected.size > 20 * 1024 * 1024) {
+        status.textContent = getText("article_document_invalid", "Choose a PDF up to 20 MiB.");
+        file.value = "";
+        return;
+      }
+      setPending(true);
+      status.textContent = "";
+      try {
+        const confirmed = await CMCENModal.confirm(
+          `${selected.name}\n\n${getText("article_document_public_confirm", "This PDF will be publicly accessible immediately. Confirm that it is approved for public sharing. Saving or publishing the article is a separate step.")}`,
+          { title: getText("article_upload_document", "Upload PDF") },
+        );
+        if (!confirmed || !root.isConnected) return;
+        status.textContent = getText("article_document_uploading", "Uploading PDF…");
+        const data = new FormData();
+        data.append("document", selected);
+        data.append("publicConfirmed", "true");
+        const result = await api("/api/documents", { method: "POST", body: data });
+        if (!root.isConnected) return;
+        if (!window.NewsletterRenderer.safeUrl(result.url)) throw new Error("Invalid document URL");
+        onChange({ href: result.url, label: result.name });
+      } catch (error) {
+        if (root.isConnected) status.textContent = getText(
+          error.status === 422 ? "article_document_rejected" : error.status === 403 ? "article_document_denied" : "article_document_upload_error",
+          error.status === 422 ? "This PDF could not be accepted. Export a static PDF without encryption, forms, scripts, or embedded files and try again." : error.status === 403 ? "You no longer have permission to upload documents." : "Could not upload the PDF. Check your connection and try again.",
+        );
+      } finally { file.value = ""; setPending(false); }
+    });
+    const actions = el("div", "article-block-tools");
+    actions.append(upload, file, choose, more);
+    root.append(help, actions, select, status);
+    return root;
+  }
+
+  function create({ inputs, getText, api, canUpload, canUploadDocuments = false, busy, sharedFigurePreview = false }) {
     const root = el("div", "article-block-editor");
     const blocks = window.NewsletterFormat.pairBlocks(
       JSON.parse(inputs.en.value || "[]"),
@@ -581,6 +665,15 @@ window.ArticleEditor = (() => {
             );
           }
           if (block.type === "document") {
+            if (canUploadDocuments) card.append(documentControl({
+              api, getText, busy,
+              onChange: (document) => {
+                block.href = document.href;
+                block.label = block.label || document.label;
+                changed();
+                redraw(index);
+              },
+            }));
             card.append(
               field(
                 "article_document_label",
@@ -709,5 +802,5 @@ window.ArticleEditor = (() => {
     redraw();
     return root;
   }
-  return { create, mediaControl, readInline };
+  return { create, mediaControl, documentControl, readInline };
 })();

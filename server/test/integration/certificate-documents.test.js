@@ -16,6 +16,20 @@ const AuditLog = require('../../models/AuditLog');
 const documents = require('../../services/certificate-documents');
 const awards = require('../../services/trusted-to-serve-documents');
 const originalAwardGenerate = awards.generateTrustedToServe;
+const generationDay = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .format(new Date())
+    .replaceAll('-', '');
+
+const downloadName = (response) =>
+  decodeURIComponent(
+    response.headers['content-disposition'].split("filename*=UTF-8''")[1],
+  );
 const awardGenerate = mock.method(
   awards,
   'generateTrustedToServe',
@@ -49,6 +63,13 @@ const packetGenerate = mock.method(
   originalPacket,
 );
 const app = express();
+const filenames = require('../../services/certificate-filenames');
+const originalFilename = filenames.certificateFilename;
+const filenameGenerate = mock.method(
+  filenames,
+  'certificateFilename',
+  originalFilename,
+);
 app.use(express.json());
 app.use(
   '/api/certificate-requests',
@@ -102,6 +123,8 @@ after(async () => {
   await mongo?.stop();
 });
 const url = () => `/api/certificate-requests/${id}/member.pdf`;
+
+
 
 test('unauthenticated/forbidden requests cannot invoke generation and private errors are not cached', async () => {
   const count = generate.mock.callCount();
@@ -189,6 +212,11 @@ test('repeated inline/attachment responses audit generation without marking any 
       assert.match(response.headers['content-type'], /^application\/pdf/);
       assert.equal(response.headers['cache-control'], 'private, no-store');
       assert.equal(response.headers['x-content-type-options'], 'nosniff');
+      assert.match(
+        downloadName(response),
+        new RegExp(`^${generationDay()}-UU-1000-C&E-FR-`),
+      );
+      assert.match(downloadName(response), /Émilie_Anne-Marie_D’Amour/u);
       assert.match(
         response.headers['content-disposition'],
         download ? /^attachment;/ : /^inline;/,
@@ -315,6 +343,11 @@ test('family/packet output supports repeated previews/downloads, audits choices 
         );
         const output = await require('pdf-lib').PDFDocument.load(response.body);
         assert.equal(output.getPageCount(), kind === 'packet' ? 2 : 1);
+        assert.ok(
+          downloadName(response).endsWith(
+            kind === 'packet' ? '_packet.pdf' : '_family-1.pdf',
+          ),
+        );
       }
     }
     assert.deepEqual(await CertificateRequest.findById(id).lean(), before);
@@ -456,6 +489,10 @@ test('repeated award previews/downloads audit safe details without creating requ
         })
         .expect(200);
       assert.equal(response.headers['cache-control'], 'private, no-store');
+      assert.equal(
+        downloadName(response),
+        `${generationDay()}-UU-1000-C&E_Corporal_D’Amour_CD.pdf`,
+      );
       assert.match(response.headers['content-type'], /^application\/pdf/u);
       assert.match(
         response.headers['content-disposition'],
@@ -603,6 +640,10 @@ test('manual member retirement generation validates and audits document-only pre
         .send({ ...input, ...extra })
         .expect(200);
       assert.equal(response.headers['content-type'], 'application/pdf');
+      assert.equal(
+        downloadName(response),
+        `${generationDay()}-UU-1000-C&E-FR-Adjudant_D’Amour${extra.postNominals ? '_MMM_CD' : ''}.pdf`,
+      );
       assert.equal(response.headers['cache-control'], 'private, no-store');
       assert.match(
         response.headers['content-disposition'],
@@ -713,4 +754,127 @@ test('manual member retirement generation validates and audits document-only pre
     JSON.stringify(audits.map((value) => value.metadata)),
     /Émilie|D’Amour/u,
   );
+});
+
+test('all PDF paths reject invalid zones before generation and use the requested local generation day', async () => {
+  const retirementId = new mongoose.Types.ObjectId(),
+    awardId = new mongoose.Types.ObjectId();
+  const award = {
+    firstName: 'Alex',
+    lastName: 'Example',
+    fullRankEn: 'Corporal',
+    postNominals: '',
+    presentationDate: '2026-12-01',
+    frPronoun: 'il',
+  };
+  await CertificateRequest.collection.insertMany([
+    {
+      _id: retirementId,
+      ...memberRequest(),
+      status: 'pending',
+      familyMembers: [
+        {
+          fullName: 'Family Example',
+          memberRelationshipToRecipient: 'partner',
+        },
+      ],
+    },
+    {
+      _id: awardId,
+      certificateType: 'trusted_to_serve',
+      trustedToServe: award,
+      status: 'pending',
+      member: { fullName: 'Alex Example' },
+    },
+  ]);
+  const paths = [
+    ['post', '/trusted-to-serve.pdf', { ...award, reviewed: true }],
+    [
+      'post',
+      '/retirement.pdf',
+      {
+        firstName: 'Alex',
+        lastName: 'Example',
+        fullRankEn: 'Corporal',
+        rankLanguage: 'en',
+        ceBranchEnrollmentDate: '2000-01-01',
+        releaseDate: '2026-11-01',
+        reviewed: true,
+      },
+    ],
+    ['post', '/' + awardId + '/trusted-to-serve.pdf', { reviewed: true }],
+    ['get', '/' + retirementId + '/member.pdf'],
+    ['post', '/' + retirementId + '/family/0.pdf', {}],
+    ['post', '/' + retirementId + '/packet.pdf', {}],
+  ];
+  const auditsBefore = await AuditLog.countDocuments();
+  const counts = [generate, familyGenerate, packetGenerate, awardGenerate].map(
+    (spy) => spy.mock.callCount(),
+  );
+  for (const [method, path, body] of paths) {
+    for (const query of [
+      'timeZone=',
+      'timeZone=Not%2FAZone',
+      'timeZone=UTC&timeZone=UTC',
+      'timeZone%5Bzone%5D=UTC',
+      'timeZone=' + 'x'.repeat(101),
+    ]) {
+      const call = request(app)
+        [method]('/api/certificate-requests' + path + '?' + query)
+        .set('Authorization', 'Bearer ' + editorToken);
+      if (body) call.send(body);
+      const response = await call.expect(400);
+      assert.equal(response.body.code, 'certificate_time_zone_invalid');
+    }
+  }
+  assert.equal(await AuditLog.countDocuments(), auditsBefore);
+  assert.deepEqual(
+    [generate, familyGenerate, packetGenerate, awardGenerate].map((spy) =>
+      spy.mock.callCount(),
+    ),
+    counts,
+  );
+  const bytes = async () => Buffer.from('%PDF-test');
+  generate.mock.mockImplementation(bytes);
+  familyGenerate.mock.mockImplementation(bytes);
+  packetGenerate.mock.mockImplementation(bytes);
+  awardGenerate.mock.mockImplementation(bytes);
+  filenameGenerate.mock.mockImplementation((record, options) =>
+    originalFilename(record, {
+      ...options,
+      now: new Date('2026-11-10T00:30:00Z'),
+    }),
+  );
+  try {
+    for (const [method, path, body] of paths) {
+      for (const download of ['', '&download=1']) {
+        for (const [zone, day] of [
+          ['America/Toronto', '20261109'],
+          ['Asia/Tokyo', '20261110'],
+        ]) {
+          const call = request(app)
+            [method](
+              '/api/certificate-requests' +
+                path +
+                '?timeZone=' +
+                encodeURIComponent(zone) +
+                download,
+            )
+            .set('Authorization', 'Bearer ' + editorToken);
+          if (body) call.send(body);
+          const response = await call.expect(200);
+          assert.ok(
+            downloadName(response).startsWith(day + '-'),
+            path + ' ' + zone,
+          );
+        }
+      }
+    }
+  } finally {
+    generate.mock.mockImplementation(originalGenerate);
+    familyGenerate.mock.mockImplementation(originalFamily);
+    packetGenerate.mock.mockImplementation(originalPacket);
+    awardGenerate.mock.mockImplementation(originalAwardGenerate);
+    filenameGenerate.mock.mockImplementation(originalFilename);
+  }
 });

@@ -24,6 +24,7 @@ const { writeAuditLog } = require('../services/audit-log');
 const s3Client = require('../storage');
 
 const router = express.Router();
+router.use('/documents', require('./documents'));
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {

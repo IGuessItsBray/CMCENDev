@@ -16,6 +16,16 @@ info:
     Retry-After and RateLimit-* headers. Sensitive endpoints have stricter limits.
     Every response includes X-Request-ID for support correlation. Server failures
     are logged and audited without retaining request bodies or query strings.
+    Certificate PDFs include ASCII filename and UTF-8 filename* in Content-Disposition.
+    Names use the caller's timeZone generation day, not the event date. All PDF paths
+    accept an optional IANA timeZone query (default America/Toronto); invalid, empty,
+    repeated, array or object values return 400 with certificate_time_zone_invalid
+    before generation or audit writes. Trusted to Serve uses
+    YYYYMMDD-UU-1000-C&E_EnglishRank_Surname_PostNominals.pdf (optional post-nominals).
+    Retirement uses YYYYMMDD-UU-1000-C&E-EN-Rank_Surname_PostNominals.pdf; French-first
+    certificates use FR and the French rank. Legacy requests lacking surname use
+    the complete known name. Family and packet files add _family-1 or _packet.
+    Names exceeding 240 UTF-8 bytes are shortened with a deterministic hash suffix.
 servers:
   - url: http://localhost:3000
     description: Local development (Eric)
@@ -414,6 +424,7 @@ paths:
       description: Uses the existing approved templates and private fonts. No retirement post, certificate request or fulfillment state is created. Successful generation is audited; all responses are private/no-store. Downloads require reviewed=true after checking entered details. Family dates use optional dwdDate, otherwise releaseDate; packets contain the member first, then family recipients in input order.
       x-permission: canManageCertificateRequests
       parameters:
+        - $ref: '#/components/parameters/CertificateTimeZone'
         - in: query
           name: download
           schema: { type: string, enum: ["1"] }
@@ -556,6 +567,7 @@ paths:
                     lastName: { type: string, minLength: 1, maxLength: 100 }
                     postNominals: { type: string, maxLength: 120 }
                     fullRankEn: { type: string, description: Supported full military rank from the Trusted to Serve catalogue. }
+                    awardRole: { type: string, enum: [student, instructor], default: student, description: Selects the approved bilingual body wording. Omission preserves Student wording and legacy retry fingerprints. }
                     presentationDate: { type: string, format: date }
                     frPronoun: { type: string, enum: [il, elle] }
                     reviewed: { type: boolean, enum: [true] }
@@ -599,6 +611,7 @@ paths:
       description: Requires certificates.manage. Uses saved award fields only. Reviewed confirmation is mandatory for preview and download. Private/no-store on every response; successful generation is audited and does not change fulfillment status. Confirm printing separately using certificateKey member.
       x-permission: canManageCertificateRequests
       parameters:
+        - $ref: '#/components/parameters/CertificateTimeZone'
         - $ref: "#/components/parameters/CertificateRequestId"
         - in: query
           name: download
@@ -631,9 +644,10 @@ paths:
       tags: [Certificates]
       operationId: generateTrustedToServeCertificate
       summary: Preview or download a reviewed Trusted to Serve award.
-      description: Generates a bilingual award from fixed approved artwork and complete variable text regions using private exact fonts. All ten recipient occurrences and the presentation date are rebuilt. Requires explicit French pronoun/article choices; neither is inferred from the name. Attachment downloads additionally require reviewed=true. No nomination, request record or fulfillment-state mutation is created. Successful generation is audited and every response is private/no-store.
+      description: Generates a Student (default) or Instructor bilingual award from fixed approved artwork and complete variable text regions using private exact fonts. All recipient occurrences and the presentation date are rebuilt. English stays left and French right. Requires an explicit French grammatical form, never inferred from the name. Attachment downloads additionally require reviewed=true. No nomination, request record or fulfillment-state mutation is created. Successful generation is audited and every response is private/no-store.
       x-permission: canManageCertificateRequests
       parameters:
+        - $ref: '#/components/parameters/CertificateTimeZone'
         - in: query
           name: download
           schema:
@@ -664,6 +678,11 @@ paths:
                 fullRankEn:
                   type: string
                   description: Military rank from the award subset of the shared catalogue. Civilian, generic Recruit and custom ranks are not supported. Derives bilingual body abbreviations and French articles.
+                awardRole:
+                  type: string
+                  enum: [student, instructor]
+                  default: student
+                  description: Selects approved bilingual body wording. Student preserves existing output; Instructor uses an abbreviated English rank and the full lowercase French rank with articles matching frPronoun. Missing values in older saved awards also mean Student.
                 rankEn:
                   deprecated: true
                   description: Optional older-client label; must match the selected rank's full English name or verified abbreviation.
@@ -720,6 +739,7 @@ paths:
       description: Generates one bilingual member PDF from the approved template and existing request data. Family certificates are excluded. Requires configured exact licensed fonts; no font fallback is used. Generation is audited and never changes fulfillment status. Every response is private and no-store.
       x-permission: canManageCertificateRequests
       parameters:
+        - $ref: '#/components/parameters/CertificateTimeZone'
         - $ref: "#/components/parameters/CertificateRequestId"
         - in: query
           name: download
@@ -757,6 +777,7 @@ paths:
       description: Generates one bilingual family PDF using the saved requester memberRelationshipToRecipient answer. The original 19 phrases are preserved with six additional grandparent/grandchild options. Missing or unsupported answers fail validation; there is no inference or relationship override. The date defaults to the saved DWD ceremony date, otherwise the member release date. No fulfillment state is changed; generation is audited. All responses are private and no-store.
       x-permission: canManageCertificateRequests
       parameters:
+        - $ref: '#/components/parameters/CertificateTimeZone'
         - $ref: "#/components/parameters/CertificateRequestId"
         - in: path
           name: familyIndex
@@ -809,6 +830,7 @@ paths:
       description: Atomically generates a packet with the member first, then each family recipient in stored request order. Every family entry requires a supported saved memberRelationshipToRecipient answer from the requester. No per-download relationship overrides or neutral fallback. No printing/mailing state is changed. Successful generation records wording keys and certificate date in the audit log. All responses are private and no-store.
       x-permission: canManageCertificateRequests
       parameters:
+        - $ref: '#/components/parameters/CertificateTimeZone'
         - $ref: "#/components/parameters/CertificateRequestId"
         - in: query
           name: download
@@ -2691,6 +2713,52 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+  /api/documents:
+    get:
+      tags: [Uploads]
+      operationId: listUploadedDocuments
+      summary: List staff-uploaded public PDFs for reuse in articles.
+      description: Requires media upload and at least one news, page or content review permission. Returns up to 50 newest documents and a nextCursor. Does not expose uploader identity or alter the public document catalogue.
+      x-permission: canUploadMedia
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string, pattern: "^[a-f0-9]{24}$" }
+      responses:
+        "200":
+          description: A documents array and nextCursor (empty when complete).
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [Uploads]
+      operationId: uploadPublicDocument
+      summary: Upload an explicitly approved public PDF.
+      description: Requires media upload and at least one news, page or content review permission. One PDF up to 20 MiB and 500 pages, with explicit publicConfirmed=true. The link is public immediately; this does not publish an article or catalogue entry. Rejects malformed, encrypted, scripted, form-bearing and embedded-file PDFs. Processing has a 15-second worker timeout, 128-MiB old-generation heap limit and two concurrent upload slots. Stored under a generated UUID with PDF content type and attachment disposition; auditable and reusable by staff.
+      x-permission: canUploadMedia
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [document, publicConfirmed]
+              properties:
+                document: { type: string, format: binary }
+                publicConfirmed: { type: string, enum: ["true"] }
+      responses:
+        "201":
+          description: Uploaded document id, name, public URL, byte size, page count and creation date.
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "413": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
   /api/upload:
     post:
       tags: [Uploads]
@@ -4250,6 +4318,11 @@ components:
       in: path
       required: true
       schema: { type: string }
+    CertificateTimeZone:
+      in: query
+      name: timeZone
+      description: IANA time zone for the local generation date in the PDF filename. Invalid values return 400 with certificate_time_zone_invalid.
+      schema: { type: string, minLength: 1, maxLength: 100, default: America/Toronto }
     ArticleId:
       name: articleId
       in: path

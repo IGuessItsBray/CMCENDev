@@ -1,3 +1,19 @@
+.certificate-requests-public {
+  --admin-border: var(--branch-grey-200);
+  --admin-surface: var(--white);
+  --admin-text: var(--ink);
+  --admin-muted: var(--muted-text-color);
+}
+.certificate-requests-public-body #certificateRequestsBody {
+  display: grid;
+  gap: 20px;
+}
+.certificate-requests-public-body #certificateRequestsBody > div:empty {
+  display: none;
+}
+.certificate-requests-public-body .trusted-award-panel {
+  margin-bottom: 0;
+}
 .certificate-member-actions {
   display: flex;
   flex-wrap: wrap;
@@ -114,6 +130,20 @@
   font: inherit;
   font-weight: 500;
 }
+.trusted-award-field > input:not([type='checkbox']):not([type='hidden']),
+.trusted-award-field > select {
+  display: block;
+  height: 48px;
+  min-height: 48px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.trusted-award-field > .cmcen-date-time-picker > .cmcen-date-time-trigger {
+  min-height: 48px;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1.4;
+}
 .trusted-award-panel input:focus-visible,
 .trusted-award-panel select:focus-visible {
   outline: 3px solid rgba(197, 141, 35, 0.25);
@@ -177,10 +207,22 @@
     width: 100%;
   }
 }
+html[data-theme='dark'] .certificate-requests-public {
+  --admin-border: var(--dark-border);
+  --admin-surface: var(--dark-surface);
+  --admin-text: var(--dark-text);
+  --admin-muted: var(--dark-text-soft);
+}
+html[data-theme='dark'] .trusted-award-group,
+html[data-theme='dark'] .certificate-manual-family,
+html[data-theme='dark'] .certificate-family-documents,
+html[data-theme='dark'] .certificate-family-document-row {
+  border-color: var(--dark-border);
+}
 html[data-theme='dark'] .trusted-award-panel,
 html[data-theme='dark'] .trusted-award-panel input:not([type='checkbox']),
 html[data-theme='dark'] .trusted-award-panel select {
-  background: var(--surface, #162334);
-  color: var(--text, #f2f4f7);
-  border-color: var(--border, #425066);
+  background: var(--dark-surface);
+  color: var(--dark-text);
+  border-color: var(--dark-border);
 }

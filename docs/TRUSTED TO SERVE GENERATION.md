@@ -1,8 +1,18 @@
 # Trusted to Serve certificate generation
 
+Downloads use `YYYYMMDD-UU-1000-C&E_<EnglishFullRank>_<Surname>[_PostNominals].pdf`.
+The date is the generation day in the caller's `timeZone` query parameter, not
+the award presentation date. Browsers send their local IANA time zone; direct API
+calls default to `America/Toronto`. Invalid zones return HTTP 400 before PDF
+generation or audit writes. The
+bilingual award has no EN/FR filename tag. Unicode surnames are delivered through
+Content-Disposition `filename*`, alongside a safe ASCII fallback; compound
+surnames are preserved and spaces become underscores.
+
 The staff-only Administration → Certificate Requests view
 (`/dashboard-next?area=certificates`) includes its own clearly labelled Trusted
-to Serve section for student awards to members on course, with a small form for
+to Serve section for Student awards to members on course and Instructor awards,
+with a Student/Instructor selector and a small form for
 separate first/surname fields, optional post-nominals, a full English heading
 rank, English/French body ranks, presentation date, and explicit
 French pronoun/article wording. It generates reviewed downloads;
@@ -11,7 +21,7 @@ Document-generation API calls require `certificates.manage`. Generated PDFs are 
 held in memory, and never change retirement fulfillment state. Download requires
 acknowledgement that staff checked the entered details. Editing any input clears
 that acknowledgement. Staff open the downloaded PDF to check and print it.
-Branch staff enter approved student details received by instructor email.
+Branch staff enter approved recipient details.
 The `/certificates` page lets signed-in users with `certificates.submit` submit
 either retirement or Trusted to Serve print/mail requests. The permission is
 granted to ghost and contributor-or-higher roles and can be granted by custom
@@ -20,13 +30,17 @@ permission still protects private delivery details, staff generation and
 fulfillment. No award controls appear on public retirement listings or messages.
 
 Trusted to Serve requests preserve normalized recipient, rank, post-nominal,
-presentation date and explicit French pronoun fields. Requester contact comes
+presentation date, Student/Instructor role and explicit French pronoun fields. Requester contact comes
 only from the authenticated profile. A per-user UUID and payload fingerprint
 make retries safe, including simultaneous submissions. New requests are pending;
 they do not approve awards, send email, or create retirement posts. Staff review
 the saved details and generate through the request-specific PDF endpoint before
 confirming the `member` certificate printed and then mailed. Generation alone
 never changes status. See `API ROUTES.md` for payload and error contracts.
+New requests persist `awardRole` as `student` or `instructor`. Older clients and
+saved requests that omit the role remain Student. Omission and explicit Student
+use the original retry fingerprint; Instructor is part of the fingerprint, so a
+role change cannot silently reuse a submitted request. No data migration is needed.
 The dashboard has no embedded PDF viewer or preview-only buttons. Existing
 inline API responses remain available, but the staff workflow is download-only.
 
@@ -108,7 +122,7 @@ text editor. Replacing the source requires a new reviewed recipe/hash/master.
 dependencies. It uses the bundled private Script MT Bold and Bell MT Italic
 fonts by default; no font mount or environment setup is needed. Optional path
 overrides retain exact-family and embedding checks. The embedded Imprint MT Shadow title subset stays fixed,
-so the full title font is not required at runtime. All ten recipient occurrences
+so the full title font is not required at runtime. All ten Student recipient occurrences
 are rebuilt. The large heading tries full rank + first name(s) + surname at the original font size first. If measured font width exceeds the printable band, it uses the shared catalogue’s recognized rank abbreviation before reducing the font size (minimum 18 pt); the complete names and post-nominals remain intact. Ranks without a known abbreviation retain their full spelling. The heading includes
 optional post-nominals after a comma. The nine body/dedication mentions use only
 the corresponding EN/FR body rank + explicitly entered surname. No name is split
@@ -118,7 +132,7 @@ centered measured word wrapping, shared bilingual body font sizing, explicit
 minimum sizes and bounds that keep text above the recipient/signature regions.
 Text that cannot fit legibly or contains unsupported glyphs returns 422.
 
-The body/dedication text comes from the supplied PPTX. The English possessive
+The Student body/dedication text comes from the supplied PPTX. The English possessive
 before “outstanding contributions” is corrected; award claims are otherwise
 unchanged. Staff select one bilingual military rank and explicit masculine (il)
 or feminine (elle) French wording, including un futur / une future leader.
@@ -135,6 +149,19 @@ not a guessed service/rank conversion. Other rank consumers are unchanged.
 Older API clients can send matching full rank/form labels or abbreviations and
 a matching article assertion; mismatched/arbitrary labels or article overrides
 are rejected. No other free-text award claims are accepted.
+
+Instructor awards use the separately supplied bilingual mentorship/training
+paragraphs in `config/trusted-to-serve.js`, correcting the English possessive
+before “outstanding contributions”. All three English body mentions use the
+catalogue abbreviation and surname. All three French body mentions use the full
+lowercase selected rank form and surname: Le/La/L’ at the paragraph start,
+le/la/l’ within the paragraph, and du/de la/de l’ for the contribution clause.
+For example, `Le caporal-chef Hoyt`, `la caporale-chef Hoyt`, and
+`de l’aviatrice D’Amour` follow the explicit grammatical choice, not the name.
+The heading, dedications, fixed artwork, signatures, fonts, and legible layout
+bounds stay unchanged. Both roles remain English-left and French-right without
+a language-order selector. Unknown role values are rejected rather than silently
+using Student wording.
 
 The central name/date retain Script MT Bold and matching colors. Their old raster
 shadows are replaced with newly rendered transparent glyph-outline shadows using
@@ -154,7 +181,7 @@ supplied and distribution/server-use rights have not been independently verified
 ```sh
 cd server
 node scripts/preview-trusted-to-serve.js /tmp/cmcen-award-proofs
-node --test test/trusted-to-serve-documents.test.js test/trusted-to-serve-controller.test.js
+node --test test/trusted-to-serve-documents.test.js test/trusted-to-serve-requests.test.js test/trusted-to-serve-controller.test.js
 ```
 
 The preview script creates short and long accented synthetic recipients with
@@ -165,6 +192,19 @@ unsupported text and error recovery. Bundled-font tests run without environment
 configuration, including in CI, exercising actual subsets and rebuilt shadows. Route tests verify
 authorization, review acknowledgement, private responses, repeated generation,
 audits and unchanged request/fulfillment data.
+Instructor coverage includes the complete supplied paragraphs, all catalogue
+French forms/articles, short and long compound surnames, actual-font generation
+and unchanged overflow limits. Request tests cover both stored roles, malformed
+roles, saved legacy Student generation, pre-role retry hashes and role conflicts.
+
+The Instructor update was locally rendered at 2× and visually reviewed for a
+short masculine Master Corporal recipient, a long feminine compound surname,
+an elided Aviator form, and a long naval rank. All eight extracted paragraphs
+matched their complete expected text, with no clipping or overlap. These samples
+fit at 9.24–9.96 pt without changing the minimum size or layout bounds. Two Student
+samples were pixel-identical to their pre-update output. The matching short
+Student/Instructor samples also had zero differing pixels among 1,538,472 pixels
+outside the body area, preserving the fixed artwork and other variable fields.
 
 Local browser QA exercised the rendered input form and explicit wording selections.
 Controller tests cover download actions, busy controls, repeated clicks, error
@@ -173,4 +213,4 @@ PDFKit with rebuilt recipient mentions and unchanged fixed artwork outside the
 variable regions. Staff should check downloaded files in their normal PDF reader
 before printing.
 
-Heading rank abbreviations use the shared catalogue IDs and the official [English CAF rank table](https://www.canada.ca/en/services/defence/caf/military-identity-system/rank-appointment-insignia.html) and [French CAF rank table](https://www.canada.ca/fr/services/defense/fac/systeme-identite-militaire/insignes-grade-fonction.html). S1/S2/S3 follow the current sailor terminology confirmed in [CAF Personnel Instruction 01/23](https://www.canada.ca/en/department-national-defence/corporate/policies-standards/canadian-forces-military-personnel-instructions/performance-and-competency-evaluation-pace.html). Civilian and Recruit retain their full labels. Body rank inputs remain explicitly reviewed EN/FR text.
+Heading rank abbreviations use the shared catalogue IDs and the official [English CAF rank table](https://www.canada.ca/en/services/defence/caf/military-identity-system/rank-appointment-insignia.html) and [French CAF rank table](https://www.canada.ca/fr/services/defense/fac/systeme-identite-militaire/insignes-grade-fonction.html). S1/S2/S3 follow the current sailor terminology confirmed in [CAF Personnel Instruction 01/23](https://www.canada.ca/en/department-national-defence/corporate/policies-standards/canadian-forces-military-personnel-instructions/performance-and-competency-evaluation-pace.html). Civilian and Recruit retain their full labels in other certificate flows. Catalogue-derived body ranks remain explicitly reviewed before download.

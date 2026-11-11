@@ -89,7 +89,7 @@ window.ContentWorkspaceActions = {
         for (const [value, key, fallback] of [
           ["now", "content_workspace_publish_now", "Publish now"],
           ...(original
-            ? [["original", "content_workspace_publish_original", "Publish now with original date"]]
+            ? [["original", "content_workspace_original_publication_date", "Original publication date"]]
             : []),
           ...(canSchedulePublication
             ? [["schedule", "content_workspace_schedule_publish", "Schedule publication"]]
@@ -632,9 +632,6 @@ window.ContentWorkspaceActions = {
       const actionRow = document.createElement("div");
       actionRow.className = "content-workspace-action-row";
       const removalActions = createRemovalActions(item);
-      if (removalActions.childElementCount) {
-        actionRow.append(removalActions);
-      }
 
       const primaryActions = document.createElement("div");
       primaryActions.className = "content-workspace-primary-actions";
@@ -666,6 +663,9 @@ window.ContentWorkspaceActions = {
 
       if (primaryActions.childElementCount) {
         actionRow.append(primaryActions);
+      }
+      if (removalActions.childElementCount) {
+        actionRow.append(removalActions);
       }
 
       if (actionRow.childElementCount) {

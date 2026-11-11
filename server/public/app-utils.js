@@ -1,4 +1,64 @@
 (function () {
+  function getCertificatePdfQuery(download = false) {
+    let timeZone = "America/Toronto";
+    try {
+      timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || timeZone;
+    } catch {
+      // Older browsers use the Branch office's local calendar date.
+    }
+    const query = new URLSearchParams({ timeZone });
+    if (download) query.set("download", "1");
+    return `?${query}`;
+  }
+
+  function getPdfDownloadFilename(response, fallback = "certificate.pdf") {
+    const safe = (name) =>
+      typeof name === "string" &&
+      name.length <= 240 &&
+      !/[\p{Cc}\p{Cf}/\\:*?"<>|]/u.test(name) &&
+      !name.startsWith(".") &&
+      name.trim() === name &&
+      /^.+\.pdf$/iu.test(name);
+    const defaultName = safe(fallback) ? fallback : "certificate.pdf";
+    const header = response?.headers?.get?.("Content-Disposition");
+    if (!header || /[\r\n\u0000]/u.test(header)) return defaultName;
+    const parts = /^(?:attachment|inline)\s*/iu.exec(header);
+    if (!parts) return defaultName;
+    let remaining = header.slice(parts[0].length);
+    const parameters = new Map();
+    while (remaining) {
+      const parameter =
+        /^;\s*([\w*-]+)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^;\s]+))\s*/u.exec(
+          remaining,
+        );
+      if (!parameter) return defaultName;
+      const key = parameter[1].toLowerCase();
+      if (parameters.has(key)) return defaultName;
+      // Do not turn a quoted Windows path into an apparently safe basename.
+      if (
+        (key === "filename" || key === "filename*") &&
+        parameter[2]?.includes("\\")
+      ) return defaultName;
+      parameters.set(
+        key,
+        parameter[2] === undefined
+          ? parameter[3]
+          : parameter[2].replace(/\\(.)/gu, "$1"),
+      );
+      remaining = remaining.slice(parameter[0].length);
+    }
+    let name = parameters.get("filename");
+    if (parameters.has("filename*")) {
+      const encoded = /^UTF-8'[^']*'(.+)$/iu.exec(parameters.get("filename*"));
+      if (!encoded) return defaultName;
+      try {
+        name = decodeURIComponent(encoded[1]);
+      } catch {
+        return defaultName;
+      }
+    }
+    return safe(name) ? name : defaultName;
+  }
   function normalizeToken(value) {
     return String(value || "")
       .trim()
@@ -2193,6 +2253,8 @@
     fromLocalDateAndTime,
     getCurrentLanguage,
     getCurrentLocale,
+    getPdfDownloadFilename,
+    getCertificatePdfQuery,
     getLocalizedText,
     getRetireeNameParts,
     getRetireeTradeRole,

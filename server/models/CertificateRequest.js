@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { AWARD_ROLES } = require('../config/trusted-to-serve');
 function retirementRequired() {
   return this.certificateType !== 'trusted_to_serve';
 }
@@ -82,6 +83,7 @@ const certificateRequestSchema = new mongoose.Schema(
     },
 
     member: {
+      lastName: { type: String, trim: true, maxlength: 100 },
       fullName: {
         type: String,
         required: true,
@@ -160,6 +162,12 @@ const certificateRequestSchema = new mongoose.Schema(
           firstName: { type: String, required: true, maxlength: 100 },
           lastName: { type: String, required: true, maxlength: 100 },
           postNominals: { type: String, default: '', maxlength: 120 },
+          awardRole: {
+            type: String,
+            enum: AWARD_ROLES,
+            required: true,
+            default: 'student',
+          },
           fullRankEn: { type: String, required: true, maxlength: 100 },
           presentationDate: { type: String, required: true },
           frPronoun: { type: String, required: true, enum: ['il', 'elle'] },

@@ -37,6 +37,24 @@ function getOperations(schema) {
 }
 
 describe('OpenAPI contract', () => {
+  test('Trusted to Serve generation and submission expose the same optional role contract', async () => {
+    const schema = await loadSchema();
+    const body = (route) =>
+      schema.paths[route].post.requestBody.content['application/json'].schema;
+    const generation = body('/api/certificate-requests/trusted-to-serve.pdf');
+    const submission = body('/api/certificate-requests/trusted-to-serve')
+      .properties.award;
+    for (const award of [generation, submission]) {
+      assert.deepEqual(award.properties.awardRole.enum, [
+        'student',
+        'instructor',
+      ]);
+      assert.equal(award.properties.awardRole.type, 'string');
+      assert.equal(award.properties.awardRole.default, 'student');
+      assert.ok(!award.required.includes('awardRole'));
+    }
+  });
+
   test('parses as OpenAPI 3 with documented operations and responses', async () => {
     const schema = await loadSchema();
     const operations = getOperations(schema);
@@ -74,6 +92,8 @@ describe('OpenAPI contract', () => {
       ['get', '/api/audit-logs'],
       ['get', '/api/audit-logs/export.csv'],
       ['post', '/api/upload'],
+      ['post', '/api/documents'],
+      ['get', '/api/documents'],
       ['post', '/api/admin/media/bulk-delete'],
       ['delete', '/api/profile'],
       ['delete', '/api/admin/users/{userId}'],

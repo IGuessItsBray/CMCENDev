@@ -5,6 +5,7 @@
     onDenied,
     permissions = {},
     showRequestForm = true,
+    showSubmittedRequests = true,
     root = document.getElementById("adminCertificatesBody"),
   }) {
     const translate = (key, values) => window.translate(key, values);
@@ -408,7 +409,7 @@
             ? `family/${familyIndex}.pdf`
             : `${kind}.pdf`;
         const response = await api(
-          `/api/certificate-requests/${encodeURIComponent(request._id)}/${suffix}?download=1`,
+          `/api/certificate-requests/${encodeURIComponent(request._id)}/${suffix}${window.CMCENUtils.getCertificatePdfQuery(true)}`,
           {
             parseJson: false,
             ...(trusted
@@ -435,7 +436,10 @@
         {
           const link = document.createElement("a");
           link.href = url;
-          link.download = `${trusted ? "trusted-to-serve" : `retirement-${kind}${kind === "family" ? `-${familyIndex}` : ""}`}-${request._id.replace(/[^a-f0-9]/gi, "")}.pdf`;
+          link.download = window.CMCENUtils.getPdfDownloadFilename(
+            response,
+            `${trusted ? "trusted-to-serve" : `retirement-${kind}${kind === "family" ? `-${familyIndex}` : ""}`}-${request._id.replace(/[^a-f0-9]/gi, "")}.pdf`,
+          );
           document.body.append(link);
           link.click();
           link.remove();
@@ -476,6 +480,8 @@
       }
     }
     function update() {
+      toolbar.hidden = !showSubmittedRequests && !loadFailed;
+      list.hidden = !showSubmittedRequests;
       status.textContent = translate(
         loading
           ? "certificate_requests_loading"
@@ -506,7 +512,7 @@
       for (const picker of datePickers) picker.destroy();
       datePickers.clear();
       list.replaceChildren();
-      if (!loading && !loadFailed) {
+      if (showSubmittedRequests && !loading && !loadFailed) {
         for (const request of requests)
           list.append(createCertificateRequestCard(request));
         if (!requests.length) {
@@ -743,6 +749,12 @@
       if (trusted) {
         const award = certificateRequest.trustedToServe || {};
         requestDetails.replaceChildren(
+          createCertificateRequestDetail(
+            "trusted_award_awardRole",
+            translate(
+              `trusted_award_role_${award.awardRole === "instructor" ? "instructor" : "student"}`,
+            ),
+          ),
           createCertificateRequestDetail(
             "certificate_request_rank",
             award.fullRankEn,

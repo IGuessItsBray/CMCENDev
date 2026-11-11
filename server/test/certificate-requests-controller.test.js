@@ -42,6 +42,95 @@ const trustedRequest = () => ({
   },
 });
 
+test('hidden queue preserves generators, family options, retry and language lifecycle without cards', async () => {
+  const mounted = [],
+    options = [],
+    disposed = [];
+  let fail = true;
+  const factory = (kind) => ({
+    mount({ root }) {
+      root.textContent = kind;
+      mounted.push(kind);
+      return {
+        setFamilyOptions(value) {
+          options.push(value);
+        },
+        dispose() {
+          disposed.push(kind);
+        },
+      };
+    },
+  });
+  const page = setup({
+    showSubmittedRequests: false,
+    manualGenerator: factory('retirement'),
+    awardGenerator: factory('award'),
+    api: () => {
+      if (fail) throw new Error('Options unavailable');
+    },
+  });
+  await page.controller.ready;
+  assert.deepEqual(mounted, ['retirement', 'award']);
+  assert.equal(
+    page.root.querySelector('.certificate-requests-list').hidden,
+    true,
+  );
+  assert.equal(page.root.querySelector('.certificate-request-card'), null);
+  assert.equal(
+    page.root.querySelector('.certificate-requests-toolbar').hidden,
+    false,
+  );
+  assert.equal(page.refresh().textContent, 'admin_next_retry');
+  fail = false;
+  await page.refresh().fire('click');
+  assert.equal(options[0].wordings[0].key, 'husband');
+  assert.equal(
+    page.root.querySelector('.certificate-requests-toolbar').hidden,
+    true,
+  );
+  await page.document.fire('languagechange');
+  assert.equal(
+    page.root.querySelector('.certificate-requests-list').hidden,
+    true,
+  );
+  assert.equal(page.root.querySelector('.certificate-request-card'), null);
+  assert.equal(
+    page.calls.filter(
+      (call) => call.url === '/api/certificate-requests?status=actionable',
+    ).length,
+    2,
+  );
+  page.controller.dispose();
+  assert.deepEqual(disposed.sort(), ['award', 'retirement']);
+});
+
+test('queued PDF downloads preserve server UTF-8 and ASCII certificate names', async () => {
+  for (const [item, name, utf8] of [
+    [trustedRequest(), '20261110-UU-1000-C&E_Corporal_Calayag.pdf', false],
+    [request(), '20261110-UU-1000-C&E-FR-Caporale_Bélanger_CD.pdf', true],
+  ]) {
+    const page = setup({
+      requests: [item],
+      api: (url) =>
+        url.includes('.pdf')
+          ? Promise.resolve({
+              headers: new Headers({
+                'Content-Disposition': utf8
+                  ? `attachment; filename="fallback.pdf"; filename*=UTF-8''${encodeURIComponent(name)}`
+                  : `attachment; filename="${name}"`,
+              }),
+              blob: async () => ({ type: 'application/pdf' }),
+            })
+          : undefined,
+    });
+    await page.controller.ready;
+    await page.download().fire('click');
+    assert.equal(page.downloads[0].download, name);
+    assert.equal(page.urls.length, page.revoked.length);
+    page.controller.dispose();
+  }
+});
+
 test('Trusted to Serve queue downloads the saved award after staff review without advancing status', async () => {
   const item = trustedRequest();
   const page = setup({
@@ -57,6 +146,7 @@ test('Trusted to Serve queue downloads the saved award after staff review withou
     .querySelectorAll('span')
     .map((element) => element.textContent);
   assert.ok(labels.includes('trusted_award_frPronoun'));
+  assert.ok(labels.includes('trusted_award_awardRole'));
   assert.ok(!labels.includes('certificate_request_trade_role'));
   assert.ok(!labels.includes('certificate_release_date'));
   assert.equal(page.root.querySelector('.certificate-family-documents'), null);
@@ -64,7 +154,7 @@ test('Trusted to Serve queue downloads the saved award after staff review withou
   const call = page.calls.at(-1);
   assert.equal(
     call.url,
-    '/api/certificate-requests/request%2F1/trusted-to-serve.pdf?download=1',
+    '/api/certificate-requests/request%2F1/trusted-to-serve.pdf?timeZone=America%2FToronto&download=1',
   );
   assert.equal(call.method, 'POST');
   assert.equal(call.body.reviewed, true);
@@ -159,6 +249,9 @@ function setup({
   permissions = {},
   requestForm,
   showRequestForm = true,
+  showSubmittedRequests = true,
+  manualGenerator,
+  awardGenerator,
 } = {}) {
   const root = new Element('div'),
     document = new Element('document');
@@ -179,9 +272,18 @@ function setup({
     return element;
   };
   const window = {
+    ManualRetirementCertificate: manualGenerator,
+    TrustedToServe: awardGenerator,
     TrustedToServeRequest: requestForm,
     translate: (key, values) => key + (values ? JSON.stringify(values) : ''),
     CMCENUtils: {
+      ...require('./helpers/app-utils')({
+        Intl: {
+          DateTimeFormat: () => ({
+            resolvedOptions: () => ({ timeZone: 'America/Toronto' }),
+          }),
+        },
+      }),
       getCurrentLocale: () => 'en',
       formatDate: (value, { locale, ...options }) =>
         new Intl.DateTimeFormat(locale, {
@@ -221,6 +323,7 @@ function setup({
   const controller = window.CertificateRequests.mount({
     permissions,
     showRequestForm,
+    showSubmittedRequests,
     api: async (url, options) => {
       calls.push({ url, ...options });
       const result = override?.(url, options);
@@ -332,7 +435,7 @@ test('family and packet actions use saved answers immediately and isolate downlo
   assert.equal(page.calls.at(-1).body.certificateDate, '2026-08-01');
   assert.match(
     page.calls.at(-1).url,
-    /request%2F1\/family\/0\.pdf\?download=1$/,
+    /request%2F1\/family\/0\.pdf\?timeZone=America%2FToronto&download=1$/,
   );
   assert.equal(page.root.querySelector('iframe'), null);
   const changed = page.root.querySelector('.certificate-family-date');
@@ -342,7 +445,10 @@ test('family and packet actions use saved answers immediately and isolate downlo
   assert.equal(page.revoked.length, 1);
   await page.root.querySelector('.certificate-packet-download').fire('click');
   assert.equal(page.calls.at(-1).body.familyWordings, undefined);
-  assert.match(page.calls.at(-1).url, /packet\.pdf\?download=1$/);
+  assert.match(
+    page.calls.at(-1).url,
+    /packet\.pdf\?timeZone=America%2FToronto&download=1$/,
+  );
   assert.equal(
     page.calls.some((call) => call.method === 'PATCH'),
     false,
@@ -403,7 +509,7 @@ test('member download uses authenticated binary API, guards repeated clicks and 
   assert.equal(page.calls.length, 2);
   assert.equal(
     page.calls[1].url,
-    '/api/certificate-requests/request%2F1/member.pdf?download=1',
+    '/api/certificate-requests/request%2F1/member.pdf?timeZone=America%2FToronto&download=1',
   );
   assert.equal(page.calls[1].parseJson, false);
   assert.equal(page.download().disabled, true);
@@ -413,7 +519,10 @@ test('member download uses authenticated binary API, guards repeated clicks and 
   assert.equal(page.root.querySelector('iframe'), null);
   assert.equal(page.controller.canNavigate(), true);
   await page.download().fire('click');
-  assert.match(page.calls.at(-1).url, /member\.pdf\?download=1$/);
+  assert.match(
+    page.calls.at(-1).url,
+    /member\.pdf\?timeZone=America%2FToronto&download=1$/,
+  );
   assert.equal(page.downloads.length, 2);
   assert.equal(
     page.calls.some((call) => call.method === 'PATCH'),

@@ -51,6 +51,7 @@
           reviewed: false,
         }
       : {
+          awardRole: "student",
           firstName: "",
           lastName: "",
           postNominals: "",
@@ -81,7 +82,9 @@
         values,
       );
     let controls = [],
-      status;
+      status,
+      neededByPicker,
+      neededByDateInvalid = false;
     let expanded = initiallyExpanded ?? !memberRetirement;
     let familyOptions = { relationships: [], wordings: [] };
     let refreshFamilyQuestions = [];
@@ -106,11 +109,29 @@
           (control.dataset.requiresFamilyOptions === "true" &&
             (!familyOptions.wordings.length ||
               draft.familyMembers.length >= 20));
+      if (neededByPicker) {
+        // The open calendar is portalled into document.body, outside the form.
+        for (const tag of ["button", "input", "select"])
+          for (const control of neededByPicker.popover.querySelectorAll(tag))
+            control.disabled = neededByPicker.trigger.disabled;
+        neededByPicker.error.hidden = !neededByDateInvalid;
+        if (neededByDateInvalid) {
+          neededByPicker.trigger.setAttribute("aria-invalid", "true");
+          neededByPicker.trigger.setAttribute(
+            "aria-describedby",
+            neededByPicker.error.id,
+          );
+        } else {
+          neededByPicker.trigger.removeAttribute("aria-invalid");
+          neededByPicker.trigger.removeAttribute("aria-describedby");
+        }
+      }
     }
     function render() {
       if (disposed) return;
       for (const picker of datePickers) picker.destroy();
       datePickers.clear();
+      neededByPicker = undefined;
       controls = [];
       refreshFamilyQuestions = [];
       const panel = document.createElement("details");
@@ -252,6 +273,28 @@
         groups.ranks.append(hint);
       }
       controls.push(fullRank);
+      if (!memberRetirement) {
+        const label = document.createElement("label");
+        label.className = "trusted-award-field";
+        label.textContent = t("trusted_award_awardRole");
+        const select = document.createElement("select");
+        select.className = "trusted-award-awardRole";
+        select.required = true;
+        for (const value of ["student", "instructor"]) {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = t(`trusted_award_role_${value}`);
+          select.append(option);
+        }
+        select.value = draft.awardRole;
+        select.addEventListener("change", () => {
+          draft.awardRole = select.value;
+          changed();
+        });
+        label.append(select);
+        groups.recipient.append(label);
+        controls.push(select);
+      }
       for (const [key, values] of memberRetirement
         ? [["rankLanguage", ["en", "fr"]]]
         : [["frPronoun", ["il", "elle"]]]) {
@@ -430,6 +473,45 @@
           const label = document.createElement("label");
           label.className = "trusted-award-field";
           label.textContent = t(`trusted_request_${key}`);
+          if (key === "neededByDate" && window.CMCENDateTimePicker?.create) {
+            const picker = window.CMCENDateTimePicker.create({
+              name: key,
+              dateName: key,
+              date: target[key],
+              includeTime: false,
+              label: t(`trusted_request_${key}`),
+              placeholder: t(`trusted_request_${key}`),
+              clearLabel: t("timers_picker_clear"),
+              doneLabel: t("timers_picker_done"),
+              onInput: ({ date }) => {
+                if (disposed) return;
+                if (busy || requestSnapshot) {
+                  picker.setValue({ date: target[key] });
+                  update();
+                  return;
+                }
+                target[key] = date;
+                neededByDateInvalid = false;
+                changed();
+              },
+            });
+            const trigger = picker.querySelector(".cmcen-date-time-trigger");
+            trigger.id = `${memberRetirement ? "retirement" : "trusted"}-request-needed-by`;
+            label.htmlFor = trigger.id;
+            const error = document.createElement("span");
+            error.id = `${trigger.id}-error`;
+            error.textContent = t("validation_field_required");
+            neededByPicker = {
+              trigger,
+              error,
+              popover: picker.querySelector(".cmcen-date-time-popover"),
+            };
+            datePickers.add(picker);
+            controls.push(trigger);
+            label.append(picker, error);
+            fields.append(label);
+            continue;
+          }
           const input = document.createElement("input");
           input.className = `trusted-request-${key}`;
           input.name = key;
@@ -543,7 +625,7 @@
       update();
       try {
         const response = await api(
-          `/api/certificate-requests/${memberRetirement ? "retirement" : "trusted-to-serve"}.pdf${download ? "?download=1" : ""}`,
+          `/api/certificate-requests/${memberRetirement ? "retirement" : "trusted-to-serve"}.pdf${window.CMCENUtils.getCertificatePdfQuery(download)}`,
           {
             method: "POST",
             json: true,
@@ -570,9 +652,12 @@
         if (download) {
           const link = document.createElement("a");
           link.href = url;
-          link.download = memberRetirement
-            ? `retirement-${documentKind}-${draft.releaseDate}.pdf`
-            : `trusted-to-serve-${draft.presentationDate}.pdf`;
+          link.download = window.CMCENUtils.getPdfDownloadFilename(
+            response,
+            memberRetirement
+              ? `retirement-${documentKind}-${draft.releaseDate}.pdf`
+              : `trusted-to-serve-${draft.presentationDate}.pdf`,
+          );
           document.body.append(link);
           link.click();
           link.remove();
@@ -623,6 +708,13 @@
       const form = root.querySelector("form");
       if (!requestSnapshot && form.reportValidity && !form.reportValidity())
         return;
+      if (!requestSnapshot && neededByPicker && !delivery.neededByDate) {
+        neededByDateInvalid = true;
+        message = "validation_field_required";
+        update();
+        neededByPicker.trigger.focus();
+        return;
+      }
       if (!requestSnapshot) {
         requestId ||= window.crypto.randomUUID();
         requestSnapshot = JSON.parse(
@@ -720,6 +812,7 @@
         lifecycle.abort();
         for (const picker of datePickers) picker.destroy();
         datePickers.clear();
+        neededByPicker = undefined;
         for (const url of urls) URL.revokeObjectURL(url);
         urls.clear();
         draft = {};

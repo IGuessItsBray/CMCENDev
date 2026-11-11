@@ -80,7 +80,12 @@
       link: document.getElementById("adminCertificatesLink"),
       element: document.getElementById("adminCertificates"),
       title: "adminCertificatesTitle",
-      mount: (options) => window.CertificateRequests.mount(options),
+      mount: (options) =>
+        window.CertificateRequests.mount({
+          ...options,
+          showRequestForm: false,
+          showSubmittedRequests: false,
+        }),
     },
     analytics: {
       permission: "canViewAnalytics",

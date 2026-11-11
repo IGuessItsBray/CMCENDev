@@ -483,6 +483,33 @@ reverts, and failed/conflicted attempts are never offered as completed changes.
 
 Mounted at `/api`.
 
+Staff can upload a PDF from a document block in the bilingual article editor,
+then reuse it through “Choose an uploaded PDF”. The existing public catalogue
+picker remains separate. Uploads do not publish an article or add a public
+catalogue entry. Staff must explicitly confirm that the file is suitable for
+public access: its permanent link works immediately, including for draft
+articles. This is not a private attachment facility.
+
+`POST /api/documents` accepts one `document` PDF (20 MiB maximum, 500 pages)
+and `publicConfirmed=true`. Requires `canUploadMedia` plus at least one of
+`canManageNews`, `canManagePages`, or `canReviewAndPublish`; existing role grants
+are unchanged. Type, extension, PDF structure, encryption, active actions,
+forms and embedded files are checked before storage. Processing uses a worker
+with a 15-second timeout and a 128-MiB old-generation heap limit, with two
+concurrent uploads per process.
+Files receive generated UUID paths, PDF content type and attachment disposition.
+Metadata persistence failure triggers object cleanup. Successful uploads record
+`media.document_uploaded` in the audit log. Returns `201` with `id`, `name`,
+`url`, `size`, `pages`, and `createdAt`; errors are `400`, `401`, `403`, `413`,
+`422`, `429`, `500`, or `503`.
+
+`GET /api/documents` uses the same staff permissions and returns `{ documents,
+nextCursor }`, at most 50 newest uploaded PDFs. Pass `cursor=nextCursor` for the
+next page. Invalid cursors return `400`. Responses are not cacheable and do not
+include uploader identity. Public catalogue documents remain on the existing
+`/page-content/document-library.json` endpoint. Only PDFs are supported by this
+new upload workflow; DOCX and other formats must be exported to PDF first.
+
 | Method | Path              | Access                                | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------ | ----------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `POST` | `/api/upload`     | Authenticated + `canUploadMedia`      | Multipart image upload using field `image`. The server validates and re-encodes every stored image as metadata-free WebP before it reaches object storage, then creates variants and a media asset with UUID, upload source context, inferred source name, file metadata, and safe rendering metadata. Retirement and Last Post forms send `displayAspectRatio=4:3`; news stories send `displayAspectRatio=16:9`. Both may supply `displayCropX` and `displayCropY` values from 0 to 1; the response then includes `display`, a server-rendered crop for compact cards, while `url` continues to identify the full original for detail pages. Optional `cdnSlug` creates a stable destination such as `images/branch-crest/large.webp`; it must be unique, lowercase, and use letters, numbers, and single hyphens. Other optional fields: `uploadSource`, `uploadContext`, `sourceId`, `sourceModel`, `sourceField`, `sourceUrl`, `sourceSlug`, `sourceName`. |
@@ -589,6 +616,35 @@ flow blocks in document order, ignoring desktop grid row positions.
 
 Mounted at `/api/certificate-requests`.
 
+All certificate PDF responses provide a safe ASCII `filename` and UTF-8
+`filename*` in Content-Disposition. Download names use the generation day in the caller's `timeZone` query parameter
+(not the presentation, retirement or request date). All certificate PDF endpoints,
+including previews, accept a supported IANA time zone (1–100 characters), such as
+`America/Toronto`. Omission defaults to `America/Toronto` for direct API clients.
+The browser sends its local time zone. Unknown, empty, repeated, array or object
+values return HTTP 400 with `code: certificate_time_zone_invalid` before document
+generation or audit writes:
+
+
+- Trusted to Serve: `YYYYMMDD-UU-1000-C&E_Corporal_Calayag.pdf`, with optional
+  `_CD` or other supplied post-nominals. The rank is full English; no EN/FR tag.
+- Retirement: `YYYYMMDD-UU-1000-C&E-EN-Corporal_Calayag_CD.pdf`. French-first
+  uses `FR` and the full French catalogue rank, based on saved `rankLanguage`,
+  independent of the interface language.
+- Family and packet files add `_family-1` (one-based recipient index) or
+  `_packet` before `.pdf` to distinguish documents from the member certificate.
+
+Spaces and unsafe filename separators become underscores, while Unicode names
+are preserved in `filename*`. Manual and newly submitted standalone retirement
+requests retain the explicit surname, including compound surnames. Legacy
+requests without a separate surname use the complete known name, never a guessed
+last token. No migration is required; existing submission retry fingerprints
+remain compatible.
+Unusually long filenames are limited to 240 UTF-8 bytes, truncated only at
+Unicode code-point boundaries with a deterministic 12-character hash suffix.
+The document suffix and `.pdf` remain intact. A name containing only unsafe
+characters uses `Recipient` rather than disappearing from the filename.
+
 ### Standalone print and mail submissions
 
 `POST /api/certificate-requests/trusted-to-serve` and
@@ -601,7 +657,8 @@ Both accept `neededByDate` (strict YYYY-MM-DD), `mailingAddress` (line1, optiona
 line2, city, province, postalCode, country), `requesterRelationship`, and a UUID
 `requestId`. Trusted to Serve additionally accepts `award` with firstName,
 lastName, optional postNominals, fullRankEn, presentationDate, frPronoun and
-`reviewed: true`. Retirement instead accepts `retirement` with firstName,
+`reviewed: true`, plus optional `awardRole` (`student|instructor`, default
+`student`). Unknown or malformed roles return 422. Retirement instead accepts `retirement` with firstName,
 lastName, optional postNominals, fullRankEn, rankLanguage, ceBranchEnrollmentDate,
 releaseDate, optional dwdDate, familyMembers and `reviewed: true`, plus top-level
 lastUnit, tradeRole and boolean dwdParadeRequested. Existing retirement date,
@@ -618,13 +675,18 @@ content, including another certificate type, with the same UUID returns 409
 concurrent retries while leaving legacy records without keys valid. Keys and
 fingerprints are excluded from queue responses. Submissions are audited and
 create no retirement message, award approval, email or fulfillment transition.
+Both role values are saved explicitly for new award requests. Omitted and explicit
+Student roles retain the pre-role fingerprint; Instructor is included in the
+fingerprint, so changing roles under the same UUID returns 409. Existing saved
+requests without a role remain Student without a migration.
 
 `GET /api/certificate-requests/options` requires the submit permission and returns
 `{relationships,wordings}` for family request controls without exposing the queue.
 
 `POST /api/certificate-requests/:certificateRequestId/trusted-to-serve.pdf`
 requires management permission and exactly `{reviewed:true}`. It generates from
-saved award details only. Optional `?download=1` returns an attachment. Every
+saved award details, including the saved role, only; callers cannot override it.
+Optional `?download=1` returns an attachment. Every
 response is private/no-store, successful generation is audited, and status does
 not change. Trusted to Serve uses the existing `member` print confirmation key;
 retirement requests retain member/family/packet generation and all-family print
@@ -661,7 +723,13 @@ then families in supplied order. An empty family list is valid.
 `canManageCertificateRequests` and accepts explicit `firstName` and `lastName`
 (100 chars each), `fullRankEn` (shared catalogue), optional `postNominals`,
 `presentationDate` (`YYYY-MM-DD`) and `frPronoun` (`il|elle`, the explicit
-masculine/feminine French wording choice). The selected rank supplies the
+masculine/feminine French wording choice), with optional `awardRole`
+(`student|instructor`, default `student`). Student preserves the existing wording.
+Instructor selects the approved mentorship/training paragraphs, using the English
+rank abbreviation and surname, and the full lowercase French rank and surname
+with Le/La/L’, le/la/l’ and du/de la/de l’ from the selected grammatical form.
+English remains left and French right for both roles; there is no language-order
+option. The selected rank supplies the
 bilingual body abbreviations and both French article forms automatically.
 Optional older-client `rankEn`/`rankFr` labels must match the selected rank and
 French form; optional `frRankGrammar` must agree with the derived articles.
@@ -672,7 +740,7 @@ The date is the award presentation date, independent of retirement data. Omit
 the query for an inline API response; the dashboard uses download-only controls.
 `?download=1` additionally requires `reviewed: true` after checking entered
 details. Output is private/no-store, and successful
-generation records `content.trusted_to_serve_generated` with date/wording/review
+generation records `content.trusted_to_serve_generated` with role/date/wording/review
 metadata. It creates no nomination/request record and changes no fulfillment
 status. This is a minimal staff certificate tool, not a nomination workflow.
 Invalid/ambiguous input, unsupported glyphs and text overflow return 422; missing

@@ -8,7 +8,14 @@ const {
   CertificateDocumentError,
   loadCertificateFont,
 } = require('./certificate-documents');
-const { BODY_EN, BODY_FR, FR_GRAMMAR } = require('../config/trusted-to-serve');
+const {
+  BODY_EN,
+  BODY_FR,
+  INSTRUCTOR_BODY_EN,
+  INSTRUCTOR_BODY_FR,
+  AWARD_ROLES,
+  FR_GRAMMAR,
+} = require('../config/trusted-to-serve');
 const { certificateFontPath } = require('../config/certificate-fonts');
 const awardRanks = require('../public/trusted-to-serve-ranks');
 const {
@@ -57,6 +64,7 @@ function getTrustedToServeData(input) {
           'firstName',
           'lastName',
           'postNominals',
+          'awardRole',
           'fullRankEn',
           'rankEn',
           'rankFr',
@@ -68,6 +76,9 @@ function getTrustedToServeData(input) {
     )
   )
     invalid('The award certificate input is invalid.');
+  const awardRole = input.awardRole === undefined ? 'student' : input.awardRole;
+  if (!AWARD_ROLES.includes(awardRole))
+    invalid('Choose student or instructor.');
   const firstName = text(input.firstName, 100, 'First name');
   const lastName = text(input.lastName, 100, 'Last name');
   const postNominals =
@@ -116,13 +127,22 @@ function getTrustedToServeData(input) {
   const recipientEn = `${rankEn} ${lastName}`,
     recipientFr = `${rankFr} ${lastName}`;
   const grammar = FR_GRAMMAR[grammarKey];
+  const instructorRankNameFr = `${frenchForm.toLocaleLowerCase('fr')} ${lastName}`;
+  const instructorRecipientFr = grammar.article + instructorRankNameFr;
   const variables = {
-    recipientEn,
+    recipientEn:
+      awardRole === 'instructor'
+        ? `${rank.abbreviationEn} ${lastName}`
+        : recipientEn,
     recipientFr,
     pronoun: input.frPronoun === 'il' ? 'Il' : 'Elle',
     contributionRecipient: grammar.contribution + recipientFr,
     futureLeader:
       input.frPronoun === 'il' ? 'un futur leader' : 'une future leader',
+    instructorSubjectFr:
+      instructorRecipientFr[0].toUpperCase() + instructorRecipientFr.slice(1),
+    instructorRecipientFr,
+    instructorContributionFr: grammar.contribution + instructorRankNameFr,
   };
   const render = (source) =>
     source.replace(/\{(\w+)\}/gu, (_, key) => variables[key]);
@@ -130,14 +150,15 @@ function getTrustedToServeData(input) {
     firstName,
     lastName,
     postNominals,
+    awardRole,
     fullRankEn,
     rankEn,
     rankFr,
     isoDate: iso,
     frPronoun: input.frPronoun,
     frRankGrammar: grammarKey,
-    bodyEn: render(BODY_EN),
-    bodyFr: render(BODY_FR),
+    bodyEn: render(awardRole === 'instructor' ? INSTRUCTOR_BODY_EN : BODY_EN),
+    bodyFr: render(awardRole === 'instructor' ? INSTRUCTOR_BODY_FR : BODY_FR),
     abbreviatedHeadline: `${abbreviateRank(fullRankEn, 'en')} ${firstName} ${lastName}${postNominals ? `, ${postNominals}` : ''}`,
     headline: `${fullRankEn} ${firstName} ${lastName}${postNominals ? `, ${postNominals}` : ''}`,
     dedicationEn: recipientEn,

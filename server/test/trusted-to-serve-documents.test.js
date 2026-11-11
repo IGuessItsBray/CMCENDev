@@ -32,6 +32,91 @@ const input = (changes = {}) => ({
   ...changes,
 });
 
+test('omitted award role preserves Student wording and unknown roles are rejected', () => {
+  const legacy = getTrustedToServeData(input());
+  assert.equal(legacy.awardRole, 'student');
+  assert.deepEqual(
+    getTrustedToServeData(input({ awardRole: 'student' })),
+    legacy,
+  );
+  for (const awardRole of [
+    null,
+    '',
+    'Instructor',
+    'teacher',
+    ' student ',
+    0,
+    false,
+    [],
+    {},
+    '__proto__',
+  ])
+    assert.throws(() => getTrustedToServeData(input({ awardRole })), {
+      code: 'award_data_invalid',
+      status: 422,
+    });
+});
+
+test('Instructor paragraphs use the approved bilingual copy with abbreviated English and full French rank', () => {
+  const data = getTrustedToServeData({
+    firstName: 'Alex',
+    lastName: 'Hoyt',
+    fullRankEn: 'Master Corporal',
+    // Matching legacy labels cannot change the Instructor prose rank format.
+    rankEn: 'Master Corporal',
+    rankFr: 'Cplc',
+    frPronoun: 'il',
+    presentationDate: '2026-11-13',
+    awardRole: 'instructor',
+  });
+  assert.equal(
+    data.bodyEn,
+    'MCpl Hoyt exemplifies the principles of “Trusted to Serve” through their unwavering integrity, professionalism, and commitment to developing future communicators. Their initiative, resilience, and strong work ethic reflect the “Fighting Spirit” that inspires both colleagues and students alike. Through their mentorship, guidance, and positive example, MCpl Hoyt has fostered a strong sense of Esprit de Corps within the training environment. Their ability to empower learners, promote teamwork, and uphold high standards has earned them the trust and respect of both staff and students. This award acknowledges MCpl Hoyt’s outstanding contributions to the C&E Branch training community and their continued commitment to excellence within the Canadian Armed Forces, Communications and Electronics Branch. Congratulations!',
+  );
+  assert.equal(
+    data.bodyFr,
+    "Le caporal-chef Hoyt incarne les principes de « Trusted to Serve » (digne de confiance pour servir) par son intégrité inébranlable, son professionnalisme et son engagement à former les futurs communicateurs. Son initiative, sa résilience et sa solide éthique de travail reflètent l'« esprit combatif » qui inspire tant ses collègues que ses étudiants. Grâce à son mentorat, ses conseils et son exemple positif, le caporal-chef Hoyt a favorisé un fort esprit de corps au sein de l'environnement de formation. Sa capacité à responsabiliser les apprenants, à promouvoir le travail d'équipe et à maintenir des normes élevées lui a valu la confiance et le respect du personnel et des étudiants. Ce prix récompense la contribution exceptionnelle du caporal-chef Hoyt à la communauté de formation de la Direction des communications et de l'électronique et son engagement continu envers l'excellence au sein des Forces armées canadiennes, Direction des communications et de l'électronique. Félicitations!",
+  );
+});
+
+test('Instructor French prose derives lowercase full ranks and articles from each explicit grammatical form', () => {
+  const { catalogue, resolve } = require('../public/trusted-to-serve-ranks');
+  const { FR_GRAMMAR } = require('../config/trusted-to-serve');
+  for (const rank of catalogue) {
+    for (const frPronoun of ['il', 'elle']) {
+      const data = getTrustedToServeData({
+        firstName: 'Alex',
+        lastName: 'van der D’Amour-Lévesque',
+        fullRankEn: rank.en,
+        presentationDate: '2026-11-13',
+        frPronoun,
+        awardRole: 'instructor',
+      });
+      const selection = resolve(rank.en, frPronoun);
+      const grammar = FR_GRAMMAR[selection.grammar];
+      const recipient = `${selection.frenchForm.toLocaleLowerCase('fr')} van der D’Amour-Lévesque`;
+      const withArticle = grammar.article + recipient;
+      assert.ok(
+        data.bodyFr.startsWith(
+          withArticle[0].toUpperCase() + withArticle.slice(1) + ' incarne',
+        ),
+      );
+      assert.ok(data.bodyFr.includes(`positif, ${withArticle} a favorisé`));
+      assert.ok(
+        data.bodyFr.includes(
+          `exceptionnelle ${grammar.contribution}${recipient} à la communauté`,
+        ),
+      );
+      assert.ok(
+        data.bodyEn.startsWith(
+          `${rank.abbreviationEn} van der D’Amour-Lévesque exemplifies`,
+        ),
+      );
+      assert.doesNotMatch(data.bodyEn + data.bodyFr, /Alex|\{\w+\}/u);
+    }
+  }
+});
+
 test('award mapping replaces ten recipient occurrences and applies only explicit French grammatical variants', () => {
   const data = getTrustedToServeData(input());
   const variableText = [
@@ -306,6 +391,82 @@ test('bundled fonts generate short/long awards without configuration with rebuil
       assert.deepEqual(request, snapshot);
     }
     assert.deepEqual(await fs.readFile(MASTER_PATH), before);
+  }));
+
+test('bundled Instructor paragraphs fit short, compound and elided names without truncation or smaller safety bounds', () =>
+  withBundledCertificateFonts(async () => {
+    const fontkit = require('@pdf-lib/fontkit');
+    const { certificateFontPath } = require('../config/certificate-fonts');
+    const document = await loadAwardMaster();
+    document.registerFontkit(fontkit);
+    const fonts = {
+      body: await document.embedFont(
+        await fs.readFile(
+          certificateFontPath('CERTIFICATE_BELL_MT_ITALIC_PATH'),
+        ),
+      ),
+      script: await document.embedFont(
+        await fs.readFile(
+          certificateFontPath('CERTIFICATE_SCRIPT_MT_BOLD_PATH'),
+        ),
+      ),
+    };
+    const base = {
+      firstName: 'Émilie Anne-Marie Catherine Alexandra',
+      lastName: 'van der D’Amour-Lévesque',
+      fullRankEn: 'Master Corporal',
+      frPronoun: 'elle',
+      presentationDate: '2026-11-13',
+      postNominals: 'MMM, CD',
+      awardRole: 'instructor',
+    };
+    for (const changes of [
+      {
+        firstName: 'Alex',
+        lastName: 'Hoyt',
+        frPronoun: 'il',
+        postNominals: '',
+      },
+      {},
+      { fullRankEn: 'Aviator', lastName: 'D’Amour-Lévesque' },
+      { fullRankEn: 'Chief Petty Officer 1st Class' },
+    ]) {
+      const request = { ...base, ...changes };
+      const data = getTrustedToServeData(request);
+      const plans = planAwardText(data, fonts);
+      for (const [index, paragraph] of [data.bodyEn, data.bodyFr].entries()) {
+        const plan = plans[index];
+        assert.equal(plan.lines.join(' '), paragraph);
+        assert.ok(plan.size >= 8.79 && plan.size <= 9.96);
+        assert.ok(plan.y - (plan.lines.length - 1) * plan.leading >= 218);
+      }
+      for (const plan of plans)
+        for (const line of plan.lines)
+          assert.ok(
+            plan.font.widthOfTextAtSize(line, plan.size) <= plan.width + 0.001,
+          );
+      const output = await PDFDocument.load(
+        await generateTrustedToServe(request),
+      );
+      assert.equal(output.getPageCount(), 1);
+      assert.deepEqual(output.getPage(0).getSize(), {
+        width: 792.24,
+        height: 612,
+      });
+    }
+    assert.throws(
+      () =>
+        planAwardText(
+          getTrustedToServeData({
+            ...base,
+            firstName: 'W'.repeat(100),
+            lastName: 'W'.repeat(100),
+            postNominals: 'W'.repeat(120),
+          }),
+          fonts,
+        ),
+      { code: 'award_text_overflow' },
+    );
   }));
 
 module.exports = { input };

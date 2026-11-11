@@ -59,7 +59,10 @@
       if (!user?.permissions) throw new Error("Missing profile permissions");
       root.replaceChildren();
       root.className = "";
-      if (user.permissions.canSubmitCertificateRequests === true) {
+      if (
+        user.permissions.canSubmitCertificateRequests === true &&
+        (publicPage || user.permissions.canManageCertificateRequests !== true)
+      ) {
         for (const [kind, factory] of [
           ["retirement", window.RetirementCertificateRequest],
           ["trusted", window.TrustedToServeRequest],
@@ -117,6 +120,7 @@
           root: host,
           api,
           showRequestForm: false,
+          showSubmittedRequests: false,
           onDenied() {
             controller.dispose();
             host.textContent = t("certificate_requests_access_denied");

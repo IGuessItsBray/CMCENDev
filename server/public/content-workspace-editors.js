@@ -284,6 +284,10 @@ window.ContentWorkspaceEditors = {
         getText,
         api: contentWorkspaceApiJson,
         canUpload: contentWorkspaceState.user?.permissions?.canUploadMedia,
+        canUploadDocuments: contentWorkspaceState.user?.permissions?.canUploadMedia === true &&
+          ["canManageNews", "canManagePages", "canReviewAndPublish"].some(
+            (key) => contentWorkspaceState.user?.permissions?.[key] === true,
+          ),
         busy: setMediaBusy,
         sharedFigurePreview: true,
       });

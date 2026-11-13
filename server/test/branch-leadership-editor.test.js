@@ -82,7 +82,7 @@ async function setup({
         version: options.body.version + 1,
         content: structuredClone(content),
         leaders: options.body.leaders.map((leader, index) => ({
-          ...leader,
+          ...structuredClone(leader),
           sectionIndex: leaders[index].sectionIndex,
           cardIndex: leaders[index].cardIndex,
         })),
@@ -108,7 +108,7 @@ async function setup({
 test('one shared name and portrait picker save only allowed shared fields and version', async () => {
   const { host, requests, instance } = await setup();
   assert.equal(host.querySelectorAll('.organization-media-picker').length, 1);
-  assert.equal(host.querySelectorAll('textarea').length, 0);
+  assert.equal(host.querySelectorAll('textarea').length, 2);
   for (const name of ['First', 'Second']) {
     const input = host.querySelector('input');
     input.value = name;
@@ -129,6 +129,7 @@ test('one shared name and portrait picker save only allowed shared fields and ve
     'id',
     'name',
     'imageKey',
+    'bios',
   ]);
   instance.dispose();
 });
@@ -356,5 +357,82 @@ test('resolving a legacy conflict preserves the expanded appointment', async () 
   assert.equal(disclosureFor(host, 'leader:conflict').open, true);
   await host.querySelector('.organization-save').fire('click');
   assert.equal(disclosureFor(host, 'leader:conflict').open, true);
+  instance.dispose();
+});
+
+test('independent biographies retain defaults and multiline edits across consecutive saves', async () => {
+  const { host, requests, instance } = await setup({
+    leaders: [
+      {
+        id: 'bio',
+        sectionIndex: 0,
+        cardIndex: 0,
+        name: 'Leader',
+        imageKey: '',
+        bios: { en: 'Original English\nSecond line', fr: 'Français conservé' },
+      },
+    ],
+  });
+  const [english, french] = host.querySelectorAll('textarea');
+  assert.equal(english.lang, 'en');
+  assert.equal(french.lang, 'fr');
+  assert.equal(english.maxLength, 30000);
+  assert.equal(english.value, 'Original English\nSecond line');
+  assert.equal(french.value, 'Français conservé');
+  english.value = 'New English\nParagraph two';
+  await english.fire('input');
+  await host.querySelector('.organization-save').fire('click');
+  const currentFrench = host.querySelectorAll('textarea')[1];
+  currentFrench.value = '';
+  await currentFrench.fire('input');
+  await host.querySelector('.organization-save').fire('click');
+  const writes = requests.filter((request) => request.options.method === 'PUT');
+  assert.deepEqual(
+    { ...writes[0].options.body.leaders[0].bios },
+    { en: 'New English\nParagraph two', fr: 'Français conservé' },
+  );
+  assert.deepEqual(
+    { ...writes[1].options.body.leaders[0].bios },
+    { en: 'New English\nParagraph two', fr: '' },
+  );
+  instance.dispose();
+});
+
+test('preserved legacy biography never revives automatically and restoration is explicit per language', async () => {
+  const { host, requests, instance } = await setup({
+    leaders: [
+      {
+        id: 'bio',
+        sectionIndex: 0,
+        cardIndex: 0,
+        name: 'Leader',
+        imageKey: '',
+        bios: { en: 'Current English', fr: 'Current French' },
+        legacyBios: { fr: 'Old French\nHistorical text' },
+      },
+    ],
+  });
+  assert.equal(host.querySelectorAll('textarea')[1].value, 'Current French');
+  assert.equal(instance.hasUnsavedChanges(), false);
+  assert.equal(
+    requests.some((request) => request.options.method === 'PUT'),
+    false,
+  );
+  await host
+    .querySelectorAll('button')
+    .find((button) => button.textContent === 'Use preserved biography')
+    .fire('click');
+  assert.equal(
+    host.querySelectorAll('textarea')[1].value,
+    'Old French\nHistorical text',
+  );
+  await host.querySelector('.organization-save').fire('click');
+  const leader = requests.find((request) => request.options.method === 'PUT')
+    .options.body.leaders[0];
+  assert.deepEqual(
+    { ...leader.bios },
+    { en: 'Current English', fr: 'Old French\nHistorical text' },
+  );
+  assert.equal(Object.hasOwn(leader, 'legacyBios'), false);
   instance.dispose();
 });

@@ -1173,8 +1173,13 @@ independent of organization content areas. Existing media-upload permission
 also applies when uploading a new image.
 
 The public page keeps fixed English and French copy, appointments and
-biographies in `server/public/page-content/leadership.json`. It overlays saved
-names and portrait keys only. Public leadership cards may receive
+default biographies in `server/public/page-content/leadership.json`. It overlays
+saved names, portrait keys and language-specific biography overrides.
+Each roster row accepts `bios: { en, fr }` with plain text up to 30,000
+characters per language. An empty string clears that public biography;
+omitting `bios` preserves both. Historical stored biographies remain inactive
+and are returned to authorized editors as `legacyBios` for optional recovery.
+Public leadership cards may receive
 `imageVariants` (verified image URLs and intrinsic widths) for responsive
 loading; the original image URL remains available for all cards. Saves are audited as `page.leadership.updated`;
 selected images are protected from deletion while referenced.

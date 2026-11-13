@@ -177,3 +177,11 @@
 .organization-field[hidden] {
   display: none;
 }
+
+.organization-preserved-biography {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  max-height: 20rem;
+  overflow-y: auto;
+}

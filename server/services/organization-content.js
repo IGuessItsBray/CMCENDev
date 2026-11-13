@@ -58,7 +58,7 @@ function sameIdentity(left, right) {
 
 // Bilingual files retain layout and text. Slot identifiers reflect the existing
 // matched section/card order; keep this order stable when editing fixed copy.
-function leadershipLeaders(stored) {
+function leadershipLeaders(stored, { includeLegacyBios = false } = {}) {
   const seed = seeds.get('leadership');
   return seed.en.sections.flatMap((section, sectionIndex) =>
     section.cards.map((card, cardIndex) => {
@@ -78,11 +78,30 @@ function leadershipLeaders(stored) {
       const conflict = !shared && hasOverride && !sameIdentity(legacy.en, legacy.fr)
         ? legacy
         : undefined;
+      const bios = Object.fromEntries(languages.map((language) => {
+        const saved = stored?.bioOverrides?.[id]?.[language];
+        return [language, typeof saved === 'string' ? saved : seed[language].sections[sectionIndex].cards[cardIndex].bio];
+      }));
+      const legacyBios = {};
+      if (includeLegacyBios) {
+        for (const language of languages) {
+          const oldLocale = stored?.[language];
+          const oldCard = oldLocale?.sections?.[sectionIndex]?.cards?.[cardIndex];
+          const original = typeof oldCard?.bio === 'string'
+            ? oldCard.bio
+            : oldLocale?.bios?.[oldCard?.bioKey];
+          if (typeof original === 'string' && original !== bios[language]
+            && original !== seed[language].sections[sectionIndex].cards[cardIndex].bio)
+            legacyBios[language] = original;
+        }
+      }
       return {
         id,
         sectionIndex,
         cardIndex,
         ...(shared || (hasOverride ? legacy.en : defaults.en)),
+        bios,
+        ...(Object.keys(legacyBios).length ? { legacyBios } : {}),
         ...(conflict ? { conflict } : {}),
       };
     }),
@@ -96,6 +115,8 @@ function overlayLeadership(content, stored) {
       const identity = leader.conflict?.[language] || leader;
       const original = cardIdentity(card);
       card.name = identity.name;
+      if (typeof stored?.bioOverrides?.[leader.id]?.[language] === 'string')
+        card.bio = leader.bios[language];
       if (identity.imageKey || Object.hasOwn(card, 'imageKey')) card.imageKey = identity.imageKey;
       if (!sameIdentity(identity, original)) {
         card.imageAlt = identity.name;
@@ -117,18 +138,31 @@ function applyLeadershipUpdate(value, stored) {
   const incoming = new Map();
   for (const row of value) {
     if (!row || typeof row !== 'object' || Array.isArray(row)
-      || Object.keys(row).some((key) => !['id', 'name', 'imageKey', 'resolveConflict'].includes(key))
+      || Object.keys(row).some((key) => !['id', 'name', 'imageKey', 'bios', 'resolveConflict'].includes(key))
       || typeof row.id !== 'string' || incoming.has(row.id))
       throw invalid('Invalid leadership roster entry');
     incoming.set(row.id, row);
   }
   const sharedLeaders = {};
+  const bioOverrides = {};
   const seed = seeds.get('leadership');
   for (const leader of current) {
     const row = incoming.get(leader.id);
     if (!row || (row.resolveConflict !== undefined && row.resolveConflict !== true))
       throw invalid('Invalid leadership roster entry');
-    const { name, imageKey } = row;
+    const { name, imageKey, bios = leader.bios } = row;
+    if (!bios || typeof bios !== 'object' || Array.isArray(bios)
+      || Object.keys(bios).length !== languages.length
+      || languages.some((language) => !Object.hasOwn(bios, language)
+        || typeof bios[language] !== 'string' || bios[language].length > 30000
+        || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/u.test(bios[language])))
+      throw invalid('Enter plain-text biographies in both languages, up to 30,000 characters each');
+    for (const language of languages) {
+      if (bios[language] !== seed[language].sections[leader.sectionIndex].cards[leader.cardIndex].bio) {
+        bioOverrides[leader.id] ??= {};
+        bioOverrides[leader.id][language] = bios[language];
+      }
+    }
     if (typeof name !== 'string' || !name.trim() || name.length > 200 || /[\u0000-\u001f]/u.test(name))
       throw invalid('A name of up to 200 characters is required');
     if (typeof imageKey !== 'string' || imageKey.length > 500
@@ -146,7 +180,7 @@ function applyLeadershipUpdate(value, stored) {
       sharedLeaders[leader.id] = { name, imageKey };
   }
   // Keep historical bilingual overrides intact even when superseded.
-  return { ...stored, sharedLeaders };
+  return { ...stored, sharedLeaders, bioOverrides };
 }
 
 function portraitKeys(content) {

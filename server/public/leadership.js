@@ -93,7 +93,7 @@
   }
 
   function createCard(card, featured, labels, senior) {
-    if (card.bioKey && !card.bio) {
+    if (card.bioKey && !Object.hasOwn(card, "bio")) {
       card = { ...card, bio: labels.bios?.[card.bioKey] };
     }
 

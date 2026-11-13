@@ -386,8 +386,8 @@
           "p",
           "organization-help",
           t(
-            "Each leader has one name and portrait shared by both languages. Appointments and translated page text stay fixed.",
-            "Chaque personne a un seul nom et portrait pour les deux langues. Les postes et le texte traduit restent fixes.",
+            "Each leader has one shared name and portrait, plus separate English and French biographies. Appointments and page headings stay fixed.",
+            "Chaque personne a un nom et un portrait communs, ainsi que des biographies anglaise et française distinctes. Les postes et les titres de page restent fixes.",
           ),
         ),
       );
@@ -474,6 +474,94 @@
             portrait(body, leader, t("Current portrait", "Portrait actuel"));
             for (const key of ["name", "imageKey"])
               field(body, leader, key, french() ? "fr" : "en");
+            leader.bios ||= { en: "", fr: "" };
+            const biographies = el("div", "organization-language-pair");
+            for (const language of ["en", "fr"]) {
+              const wrapper = el("div", "organization-field");
+              const label = el("label", "organization-field");
+              label.append(
+                el(
+                  "span",
+                  "",
+                  language === "en"
+                    ? t("English biography", "Biographie anglaise")
+                    : t("French biography", "Biographie française"),
+                ),
+              );
+              const textarea = el("textarea");
+              textarea.lang = language;
+              textarea.rows = 10;
+              textarea.maxLength = 30000;
+              textarea.value = leader.bios[language] || "";
+              textarea.addEventListener(
+                "input",
+                () => {
+                  leader.bios[language] = textarea.value;
+                  markDirty();
+                },
+                { signal },
+              );
+              label.append(textarea);
+              wrapper.append(
+                label,
+                el(
+                  "small",
+                  "",
+                  t(
+                    "Plain text. Leave empty to remove this language’s biography.",
+                    "Texte brut. Laissez vide pour supprimer la biographie dans cette langue.",
+                  ),
+                ),
+              );
+              const legacy = leader.legacyBios?.[language];
+              if (typeof legacy === "string" && legacy !== textarea.value) {
+                const recovery = el(
+                  "details",
+                  "organization-biography-recovery",
+                );
+                recovery.dataset.disclosureKey = `legacy:${leader.id}:${language}`;
+                recovery.open =
+                  disclosureState.get(recovery.dataset.disclosureKey) ?? false;
+                recovery.append(
+                  el(
+                    "summary",
+                    "",
+                    t(
+                      "Review preserved biography",
+                      "Consulter la biographie conservée",
+                    ),
+                  ),
+                );
+                const oldText = el(
+                  "pre",
+                  "organization-preserved-biography",
+                  legacy,
+                );
+                const restore = el(
+                  "button",
+                  "",
+                  t(
+                    "Use preserved biography",
+                    "Utiliser la biographie conservée",
+                  ),
+                );
+                restore.type = "button";
+                restore.addEventListener(
+                  "click",
+                  () => {
+                    textarea.value = legacy;
+                    leader.bios[language] = legacy;
+                    markDirty();
+                    textarea.focus({ preventScroll: true });
+                  },
+                  { signal },
+                );
+                recovery.append(oldText, restore);
+                wrapper.append(recovery);
+              }
+              biographies.append(wrapper);
+            }
+            body.append(biographies);
           });
         });
       if (focusLeaderId) pendingFocus = { id: focusLeaderId, scrollX, scrollY };
@@ -572,10 +660,11 @@
               body: {
                 version,
                 leaders: leaders.map(
-                  ({ id, name, imageKey, resolveConflict }) => ({
+                  ({ id, name, imageKey, bios, resolveConflict }) => ({
                     id,
                     name,
                     imageKey,
+                    bios: { en: bios?.en || "", fr: bios?.fr || "" },
                     ...(resolveConflict ? { resolveConflict: true } : {}),
                   }),
                 ),

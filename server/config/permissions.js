@@ -2,7 +2,7 @@ const { ROLE_LEVELS } = require('./roles');
 
 const PERMISSION_CATALOG = Object.freeze([
   { key: 'leadership.manage', label: 'Manage Branch leadership',
-    group: 'Leadership', action: 'edit', description: 'Update Branch leadership names and portraits independently of organization content areas.' },
+    group: 'Leadership', action: 'edit', description: 'Update Branch leadership names, portraits and biographies independently of organization content areas.' },
   {
     key: 'backups.manage',
     label: 'Manage encrypted database backups',

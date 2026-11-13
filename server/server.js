@@ -65,7 +65,9 @@ const apiRateLimit = rateLimitByIp(
 );
 app.set('trust proxy', getTrustProxy());
 app.use(requestDiagnostics);
-app.use('/api/organization-content', express.json({ limit: '400kb' }));
+// 22 slots × 2 languages × 30,000 UTF-16 units × 6 worst-case JSON bytes
+// (escaped units) = 7.92 MB, plus the roster envelope. Scope to this endpoint.
+app.use('/api/organization-content/manage/leadership', express.json({ limit: '8mb' }));
 app.use(express.json());
 app.use(setStandardResponseHeaders);
 app.use(blockKnownAiCrawlers);

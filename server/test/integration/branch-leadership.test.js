@@ -190,3 +190,56 @@ test('divergent saved pairs remain public and intact until an explicit resolutio
   assert.deepEqual(stored.content.en, old.en);
   assert.deepEqual(stored.content.fr, old.fr);
 });
+
+test('localized biographies are editable and explicitly clear defaults without reviving legacy text', async () => {
+  const url = '/api/organization-content/manage/leadership';
+  const old = getSeed('leadership');
+  old.fr.sections[0].cards[2].bio = 'Historical French copy';
+  delete old.en.sections[0].cards[2].bio;
+  old.en.sections[0].cards[2].bioKey = 'old-key';
+  old.en.bios = { 'old-key': 'Historical English copy' };
+  await OrganizationContent.create({ key: 'leadership', content: old, revision: 1 });
+  const loaded = await request(app).get(url).set('Authorization', auth).expect(200);
+  const leader = loaded.body.leaders.find(({ id }) => id === '0:2');
+  assert.ok(leader.bios.en.length);
+  assert.ok(leader.bios.fr.length);
+  assert.deepEqual(leader.legacyBios, { en: 'Historical English copy', fr: 'Historical French copy' });
+  const leaders = roster(loaded.body.leaders);
+  const edited = leaders.find(({ id }) => id === leader.id);
+  edited.bios = { en: '', fr: 'Nouveau texte.\n\nAutre paragraphe.' };
+  const saved = await request(app).put(url).set('Authorization', auth).send({ leaders, version: 1 }).expect(200);
+  assert.deepEqual(saved.body.leaders.find(({ id }) => id === leader.id).bios, edited.bios);
+  const page = await request(app).get('/page-content/leadership.json').expect(200);
+  assert.equal(page.body.en.sections[0].cards[2].bio, '');
+  assert.equal(page.body.fr.sections[0].cards[2].bio, edited.bios.fr);
+  const stored = await OrganizationContent.findOne({ key: 'leadership' }).lean();
+  assert.deepEqual(stored.content.bioOverrides, { [leader.id]: edited.bios });
+  assert.equal(stored.content.fr.sections[0].cards[2].bio, 'Historical French copy');
+  const audit = await AuditLog.findOne({ action: 'page.leadership.updated' }).lean();
+  assert.equal(audit.metadata.after.fr.sections[0].cards[2].bio, edited.bios.fr);
+  delete edited.bios;
+  await request(app).put(url).set('Authorization', auth).send({ leaders, version: 2 }).expect(200);
+  const after = await OrganizationContent.findOne({ key: 'leadership' }).lean();
+  assert.deepEqual(after.content.bioOverrides, stored.content.bioOverrides);
+});
+
+test('biography updates reject oversize, malformed and control-character values without writes', async () => {
+  const url = '/api/organization-content/manage/leadership';
+  for (const bios of [{ en: 'a'.repeat(30001), fr: '' }, { en: '', fr: '\u0000' }, { en: '' }, null]) {
+    const leaders = roster();
+    leaders[0].bios = bios;
+    await request(app).put(url).set('Authorization', auth).send({ leaders, version: 0 }).expect(400);
+  }
+  assert.equal(await OrganizationContent.countDocuments(), 0);
+});
+
+test('biography accepts the exact 30,000-character limit', async () => {
+  const leaders = roster();
+  leaders[0].bios = { en: 'é'.repeat(30000), fr: '' };
+  const saved = await request(app)
+    .put('/api/organization-content/manage/leadership')
+    .set('Authorization', auth)
+    .send({ leaders, version: 0 })
+    .expect(200);
+  assert.equal(saved.body.leaders[0].bios.en, leaders[0].bios.en);
+});

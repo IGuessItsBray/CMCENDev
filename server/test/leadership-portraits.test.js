@@ -12,7 +12,7 @@ test('public cards use width candidates with original and legacy fallbacks', asy
   const document = {
     documentElement: { lang: 'en' },
     getElementById: () => roster,
-    createElement: (tag) => new Element(tag),
+    createElement: (tag) => Object.assign(new Element(tag), { classList: { add() {} } }),
     addEventListener() {},
   };
   const imageVariants = [
@@ -44,4 +44,27 @@ test('public cards use width candidates with original and legacy fallbacks', asy
   assert.match(featured.sizes, /^\(max-width: 404px\) calc\(100vw - 88px\).*312px$/u);
   assert.equal(unchanged.src, legacy);
   assert.equal(unchanged.srcset, undefined);
+});
+
+test('explicitly cleared biography does not fall back to bundled text', async () => {
+  const roster = new Element('div');
+  const document = {
+    documentElement: { lang: 'en' },
+    getElementById: () => roster,
+    createElement: (tag) => Object.assign(new Element(tag), { classList: { add() {} } }),
+    addEventListener() {},
+  };
+  const keyed = { image: '/assets/legacy.jpg', bioKey: 'example', name: 'Example' };
+  const content = { en: {
+    bios: { example: 'Bundled biography' },
+    sections: [{ cards: [{ ...keyed, bio: '' }, keyed] }],
+  } };
+  vm.runInNewContext(
+    fs.readFileSync(path.join(__dirname, '../public/leadership.js'), 'utf8'),
+    { document, console, fetch: async () => ({ ok: true, json: async () => content }) },
+  );
+  await new Promise(setImmediate);
+  const cards = roster.querySelectorAll('article');
+  assert.equal(cards[0].querySelector('button'), null);
+  assert.ok(cards[1].querySelector('button'));
 });

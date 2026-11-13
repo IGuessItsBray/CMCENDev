@@ -118,7 +118,7 @@ paths:
           description: Unknown resource
     put:
       operationId: updateOrganizationContent
-      summary: Save shared Branch leadership names and portraits with audit history
+      summary: Save shared Branch leadership names and portraits and localized biographies with audit history
       requestBody:
         required: true
         content:
@@ -129,7 +129,7 @@ paths:
               properties:
                 leaders:
                   type: array
-                  description: All leader entries. Names and tracked portrait image keys apply to both languages; titles, appointments, biographies and layout are fixed.
+                  description: All leader entries. Names and tracked portrait image keys apply to both languages; biographies are language-specific; titles, appointments and layout are fixed.
                   items:
                     type: object
                     additionalProperties: false
@@ -138,6 +138,14 @@ paths:
                       id: { type: string }
                       name: { type: string, minLength: 1, maxLength: 200 }
                       imageKey: { type: string, maxLength: 500 }
+                      bios:
+                        type: object
+                        additionalProperties: false
+                        required: [en, fr]
+                        properties:
+                          en: { type: string, maxLength: 30000 }
+                          fr: { type: string, maxLength: 30000 }
+                        description: Plain-text biographies. An empty string suppresses the biography for that language. Omitting this field preserves both.
                       resolveConflict:
                         type: boolean
                         enum: [true]

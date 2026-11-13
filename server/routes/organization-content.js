@@ -19,7 +19,7 @@ function editorResponse(key, record) {
   return {
     key,
     content,
-    leaders: leadershipLeaders(record?.content),
+    leaders: leadershipLeaders(record?.content, { includeLegacyBios: true }),
     portraitUrls: portraitUrls(content),
     version: record?.revision || 0,
   };

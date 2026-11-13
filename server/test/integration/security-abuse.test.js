@@ -236,7 +236,10 @@ test('upload authorization and resource limits reject unsafe input before storag
     .post('/api/upload')
     .set('Authorization', `Bearer ${createSessionToken(subscriber)}`)
     .expect(403);
-  await attachImage(token, Buffer.alloc(MAX_IMAGE_BYTES + 1)).expect(413);
+  const oversized = await attachImage(token, Buffer.alloc(MAX_IMAGE_BYTES + 1)).expect(413);
+  assert.equal(oversized.body.code, 'LIMIT_FILE_SIZE');
+  assert.equal(oversized.body.maxBytes, MAX_IMAGE_BYTES);
+  assert.match(oversized.body.error, /10 MiB/);
   await attachImage(token, Buffer.from('svg'), 'image/svg+xml').expect(422);
   await attachImage(token, Buffer.from('corrupt')).expect(400);
   await request(app)
@@ -259,12 +262,14 @@ test('upload authorization and resource limits reject unsafe input before storag
     .post('/api/upload')
     .set('Authorization', `Bearer ${token}`);
   for (let i = 0; i < 17; i += 1) extraFields.field(`field${i}`, 'value');
-  await extraFields.expect(413);
-  await request(app)
+  const excessiveFields = await extraFields.expect(413);
+  assert.equal(excessiveFields.body.code, 'LIMIT_FIELD_COUNT');
+  const excessiveValue = await request(app)
     .post('/api/upload')
     .set('Authorization', `Bearer ${token}`)
     .field('sourceName', 'x'.repeat(4097))
     .expect(413);
+  assert.equal(excessiveValue.body.code, 'LIMIT_FIELD_VALUE');
   await request(app)
     .post('/api/upload')
     .set('Authorization', `Bearer ${token}`)
@@ -377,4 +382,25 @@ test('aborted multipart uploads release capacity and do not write objects', asyn
     .png()
     .toBuffer();
   await attachImage(token, png).expect(201);
+});
+
+test('leadership portrait multipart payload accepts one image and its three metadata fields', async (t) => {
+  const contributor = await createUser({ role: 'contributor' });
+  const token = createSessionToken(contributor);
+  const png = await sharp({ create: { width: 80, height: 100, channels: 3, background: 'blue' } }).png().toBuffer();
+  let writes = 0;
+  t.mock.method(s3Client, 'send', async () => { writes += 1; return {}; });
+  const response = await request(app).post('/api/upload')
+    .set('Authorization', `Bearer ${token}`)
+    .attach('image', png, { filename: 'Brigadier General portrait 2026.png', contentType: 'image/png' })
+    .field('sourceName', 'Leadership portrait')
+    .field('uploadContext', 'leadership')
+    .field('sourceField', 'portrait')
+    .expect(201);
+  assert.ok(response.body.key);
+  assert.ok(!response.body.key.includes(' '));
+  const asset = await MediaAsset.findOne({ key: response.body.key }).lean();
+  assert.equal(asset.originalName, 'Brigadier General portrait 2026.png');
+  assert.equal(asset.displayName, 'Leadership portrait');
+  assert.ok(writes > 0);
 });

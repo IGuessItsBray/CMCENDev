@@ -96,8 +96,17 @@ function readUpload(req, res, next) {
       .json({
         error:
           error instanceof multer.MulterError
-            ? 'Upload exceeds multipart limits'
+            ? ({
+                LIMIT_FILE_SIZE: 'Image exceeds the 10 MiB upload limit. Choose a smaller or compressed image.',
+                LIMIT_FILE_COUNT: 'Upload one image at a time.',
+                LIMIT_UNEXPECTED_FILE: 'Choose one image in the portrait upload field.',
+                LIMIT_FIELD_COUNT: 'Upload contains too many metadata fields (maximum 16).',
+                LIMIT_PART_COUNT: 'Upload contains too many parts (maximum 17).',
+                LIMIT_FIELD_VALUE: 'An image metadata field exceeds the 4096-byte limit.',
+                LIMIT_FIELD_KEY: 'An image metadata field name exceeds the 100-byte limit.',
+              }[error.code] || 'Image upload could not be read. Choose the image again.')
             : error.message,
+        ...(error instanceof multer.MulterError ? { code: error.code, ...(error.code === 'LIMIT_FILE_SIZE' ? { maxBytes: MAX_IMAGE_BYTES } : {}) } : {}),
       });
   });
 }

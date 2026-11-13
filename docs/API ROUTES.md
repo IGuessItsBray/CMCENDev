@@ -1160,8 +1160,13 @@ excluded from Docker. No automatic import or publication occurs.
 
 `GET /api/organization-content/manage` lists the Branch leadership resource.
 `GET /api/organization-content/manage/leadership` returns the bilingual roster,
-portrait URLs and version. `PUT` to the same route takes `content` and `version`;
-only names and image keys can be changed, and stale versions return 409.
+portrait URLs, `leaders`, and version. `PUT` to the same route takes the full
+`leaders` list (each with `id`, `name`, and `imageKey`) and `version`. Each
+name and portrait applies to both languages. Entries with differing saved
+values include `conflict.en` and `conflict.fr`; they retain those public values
+until staff explicitly save a shared selection with `resolveConflict: true`.
+Original bilingual overrides remain stored after resolution. Stale versions
+and unacknowledged conflicts return 409.
 `GET /api/organization-content/media` searches tracked images by name or key.
 All three endpoints require the dedicated `leadership.manage` permission,
 independent of organization content areas. Existing media-upload permission
@@ -1169,5 +1174,13 @@ also applies when uploading a new image.
 
 The public page keeps fixed English and French copy, appointments and
 biographies in `server/public/page-content/leadership.json`. It overlays saved
-names and portrait keys only. Saves are audited as `page.leadership.updated`;
+names and portrait keys only. Public leadership cards may receive
+`imageVariants` (verified image URLs and intrinsic widths) for responsive
+loading; the original image URL remains available for all cards. Saves are audited as `page.leadership.updated`;
 selected images are protected from deletion while referenced.
+
+Portrait uploads use the existing `/api/upload` image route: one file, at most
+10 MiB, 16 metadata fields, and 17 total parts. Multipart rejections retain
+HTTP 413 and now include the specific Multer `code` and an actionable message;
+`LIMIT_FILE_SIZE` also includes `maxBytes`. The editor checks the size before
+sending and only asks for an optional library name after a file is selected.

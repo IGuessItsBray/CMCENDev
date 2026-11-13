@@ -8,6 +8,10 @@ const router = require('../routes/page-content');
 test('public leadership content resolves both languages per deployment without mutating source', async () => {
   const originalBase = process.env.CDN_PUBLIC_BASE_URL;
   const snapshot = JSON.stringify(content);
+  const expected = structuredClone(content);
+  expected.fr.sections[0].cards[0].name = expected.en.sections[0].cards[0].name;
+  expected.fr.sections[0].cards[0].imageAlt = expected.en.sections[0].cards[0].name;
+  expected.fr.sections[0].cards[0].placeholder = false;
   const app = express();
   app.use(router);
   try {
@@ -21,7 +25,7 @@ test('public leadership content resolves both languages per deployment without m
         .expect(200);
       assert.equal(response.headers['cache-control'], 'no-cache');
       for (const lang of ['en', 'fr']) {
-        for (const [i, section] of content[lang].sections.entries()) {
+        for (const [i, section] of expected[lang].sections.entries()) {
           for (const [j, card] of section.cards.entries()) {
             const actual = response.body[lang].sections[i].cards[j];
             assert.deepEqual(

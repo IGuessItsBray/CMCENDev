@@ -72,7 +72,27 @@
     return biographyDialog;
   }
 
-  function createCard(card, featured, labels) {
+  function setCardPortrait(image, card, featured, senior) {
+    const candidates = (Array.isArray(card.imageVariants) ? card.imageVariants : [])
+      .filter((candidate) => candidate &&
+        typeof candidate.url === "string" && /^(https?:\/\/|\/(?!\/))/.test(candidate.url) &&
+        !/[\s,]/u.test(candidate.url) && Number.isSafeInteger(candidate.width) && candidate.width > 0,
+      )
+      .map(({ url, width }) => `${url} ${width}w`);
+    if (candidates.length) {
+      // Mirror the leadership CSS grid: one, two, and then three or five
+      // columns. The parent shell stops growing at 1160 CSS pixels.
+      image.sizes = featured
+        ? "(max-width: 404px) calc(100vw - 88px), (max-width: 650px) 316px, (max-width: 898px) calc(43.18vw - 75.82px), 312px"
+        : senior
+          ? "(max-width: 650px) calc(100vw - 64px), (max-width: 900px) calc((100vw - 138px) / 2), (max-width: 1050px) calc((100vw - 156px) / 3), (max-width: 1200px) calc((100vw - 192px) / 5), 201.6px"
+          : "(max-width: 650px) calc(100vw - 64px), (max-width: 900px) calc((100vw - 138px) / 2), (max-width: 1200px) calc((100vw - 156px) / 3), 348px";
+      image.srcset = candidates.join(", ");
+    }
+    image.src = card.image;
+  }
+
+  function createCard(card, featured, labels, senior) {
     if (card.bioKey && !card.bio) {
       card = { ...card, bio: labels.bios?.[card.bioKey] };
     }
@@ -89,7 +109,7 @@
       article.classList.add("leadership-card--placeholder");
     }
 
-    image.src = card.image;
+    setCardPortrait(image, card, featured, senior);
     image.alt = card.imageAlt;
     image.loading = featured ? "eager" : "lazy";
     image.decoding = "async";
@@ -182,12 +202,12 @@
       sectionElement.append(heading);
 
       if (featuredCard) {
-        sectionElement.append(createCard(featuredCard, true, localized));
+        sectionElement.append(createCard(featuredCard, true, localized, index === 0));
       }
 
       section.cards
         .filter((card) => !card.featured)
-        .forEach((card) => grid.append(createCard(card, false, localized)));
+        .forEach((card) => grid.append(createCard(card, false, localized, index === 0)));
 
       sectionElement.append(grid);
       rosterRoot.append(sectionElement);

@@ -109,7 +109,7 @@ paths:
       summary: Read the bilingual Branch leadership roster and optimistic concurrency version
       responses:
         '200':
-          description: Content and version (zero for bundled content not yet edited)
+          description: Bilingual content, shared leader entries (with conflict.en and conflict.fr for divergent legacy values), portrait URLs, and version (zero for bundled content not yet edited)
         '401':
           description: Authentication required
         '403':
@@ -118,18 +118,30 @@ paths:
           description: Unknown resource
     put:
       operationId: updateOrganizationContent
-      summary: Save bilingual Branch leadership names and portraits with audit history
+      summary: Save shared Branch leadership names and portraits with audit history
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [content, version]
+              required: [leaders, version]
               properties:
-                content:
-                  type: object
-                  description: Structured bilingual roster. Only names and tracked portrait image keys may change; bundled titles, appointments, biographies and layout are fixed.
+                leaders:
+                  type: array
+                  description: All leader entries. Names and tracked portrait image keys apply to both languages; titles, appointments, biographies and layout are fixed.
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required: [id, name, imageKey]
+                    properties:
+                      id: { type: string }
+                      name: { type: string, minLength: 1, maxLength: 200 }
+                      imageKey: { type: string, maxLength: 500 }
+                      resolveConflict:
+                        type: boolean
+                        enum: [true]
+                        description: Explicitly resolve a divergent legacy entry using the submitted shared values.
                 version:
                   type: integer
                   minimum: 0
@@ -145,7 +157,7 @@ paths:
         '404':
           description: Unknown resource
         '409':
-          description: Another editor saved this page; reload before saving
+          description: Another editor saved this page or a legacy conflict requires explicit resolution
   /api/history-heritage:
     get:
       operationId: listHistoryHeritage

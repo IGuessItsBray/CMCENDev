@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const { buildPublicMediaUrl } = require('../services/media-library');
 const catalogue = require('../services/document-catalogue');
 const OrganizationContent = require('../models/OrganizationContent');
+const MediaAsset = require('../models/MediaAsset');
 const { overlayLeadership } = require('../services/organization-content');
 
 const router = express.Router();
@@ -36,6 +37,33 @@ function resolveMedia(value) {
   return resolved;
 }
 
+async function addLeadershipPortraitVariants(content) {
+  const cards = ['en', 'fr'].flatMap((language) =>
+    content[language].sections.flatMap((section) => section.cards),
+  );
+  const keys = [...new Set(cards.map((card) => card.imageKey).filter(Boolean))];
+  if (!keys.length) return;
+  const assets = await MediaAsset.find({ key: { $in: keys }, mimeType: /^image\//u })
+    .select('key variants').lean();
+  const byKey = new Map();
+  for (const asset of assets) {
+    const byWidth = new Map();
+    for (const name of ['thumb', 'medium', 'large', 'hero']) {
+      const variant = asset.variants?.[name];
+      if (!/^images\/[a-zA-Z0-9/_ .-]+$/u.test(variant?.key || '')
+        || variant.key.split('/').includes('..')
+        || !Number.isSafeInteger(variant.width) || variant.width <= 0) continue;
+      byWidth.set(variant.width, { width: variant.width, url: buildPublicMediaUrl(variant.key) });
+    }
+    if (byWidth.size)
+      byKey.set(asset.key, [...byWidth.values()].sort((left, right) => left.width - right.width));
+  }
+  for (const card of cards) {
+    const variants = byKey.get(card.imageKey);
+    if (variants) card.imageVariants = variants;
+  }
+}
+
 router.get('/page-content/document-library.json', async (_req, res) => {
   if (mongoose.connection.readyState !== 1) {
     res.set('Cache-Control', 'no-store');
@@ -56,10 +84,18 @@ router.get('/page-content/:filename', async (req, res) => {
   if (!pages.has(req.params.filename)) return res.sendStatus(404);
   if (req.params.filename === 'leadership.json') {
     res.set('Cache-Control', 'no-cache');
-    if (mongoose.connection.readyState !== 1)
-      return res.json(resolveMedia(pages.get(req.params.filename)));
-    const record = await OrganizationContent.findOne({ key: 'leadership' }).lean();
-    return res.json(resolveMedia(overlayLeadership(structuredClone(pages.get(req.params.filename)), record?.content)));
+    const record = mongoose.connection.readyState === 1
+      ? await OrganizationContent.findOne({ key: 'leadership' }).lean()
+      : null;
+    const content = resolveMedia(overlayLeadership(structuredClone(pages.get(req.params.filename)), record?.content));
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await addLeadershipPortraitVariants(content);
+      } catch (error) {
+        console.error('Could not load leadership portrait variants:', error.name);
+      }
+    }
+    return res.json(content);
   }
   res.set('Cache-Control', 'no-cache');
   res.json(resolveMedia(pages.get(req.params.filename)));

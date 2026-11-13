@@ -46,91 +46,62 @@ function invalid(message) {
   return Object.assign(new Error(message), { status: 400 });
 }
 
-// Fixed layouts are intentional: a scoped editor cannot inject arbitrary HTML,
-// links, new keys, navigation or another organization's resource into a save.
-function validateContent(key, value) {
-  const seed = seeds.get(key);
-  if (!seed) throw invalid('Unknown organization page');
-  if (Buffer.byteLength(JSON.stringify(value)) > 300000)
-    throw invalid('Content is too large');
-  function validate(expected, actual, field = '') {
-    if (typeof expected === 'string') {
-      if (
-        typeof actual !== 'string' ||
-        actual.length > 30000 ||
-        /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(actual)
-      ) {
-        throw invalid(`Invalid text: ${field}`);
-      }
-      if (field.endsWith('.name') && (!actual.trim() || actual.length > 200))
-        throw invalid('A name of up to 200 characters is required');
-      if (field.endsWith('.image') && actual !== expected)
-        throw invalid('Use the portrait image key to change an image');
-      if (field.endsWith('.profileUrl') && actual) {
-        let url;
-        try { url = new URL(actual); } catch { throw invalid('Invalid profile link'); }
-        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
-          throw invalid('Profile links must be public HTTP or HTTPS URLs without credentials');
-      }
-      if (
-        field.endsWith('.imageKey') &&
-        actual &&
-        !/^images\/[a-zA-Z0-9/_ .-]+$/u.test(actual)
-      )
-        throw invalid('Invalid portrait image key');
-      if (field.endsWith('.imageKey') && actual.split('/').includes('..'))
-        throw invalid('Invalid portrait image key');
-      return actual;
-    }
-    if (Array.isArray(expected)) {
-      if (!Array.isArray(actual) || actual.length !== expected.length)
-        throw invalid(`Invalid layout: ${field}`);
-      return expected.map((item, index) =>
-        validate(item, actual[index], `${field}.${index}`),
-      );
-    }
-    if (expected && typeof expected === 'object') {
-      if (
-        !actual ||
-        typeof actual !== 'object' ||
-        Array.isArray(actual) ||
-        Object.keys(actual).length !== Object.keys(expected).length ||
-        Object.keys(expected).some((name) => !Object.hasOwn(actual, name))
-      )
-        throw invalid(`Invalid fields: ${field}`);
-      if (Object.hasOwn(expected, 'imageKey') && !expected.image && !actual.imageKey)
-        throw invalid('A portrait image is required');
-      return Object.fromEntries(
-        Object.entries(expected).map(([name, item]) => [
-          name,
-          validate(item, actual[name], `${field}.${name}`),
-        ]),
-      );
-    }
-    if (field.endsWith('.placeholder') && typeof actual === 'boolean')
-      return actual;
-    if (actual !== expected)
-      throw invalid(`Layout field cannot be changed: ${field}`);
-    return actual;
-  }
-  return validate(seed, value);
+const languages = ['en', 'fr'];
+
+function cardIdentity(card) {
+  return { name: card.name, imageKey: card.imageKey || '' };
 }
 
-// Fixed bilingual copy is bundled, not staff-editable. Keep legacy stored
-// values intact, but only overlay the two supported staff fields for display.
+function sameIdentity(left, right) {
+  return left.name === right.name && left.imageKey === right.imageKey;
+}
+
+// Bilingual files retain layout and text. Slot identifiers reflect the existing
+// matched section/card order; keep this order stable when editing fixed copy.
+function leadershipLeaders(stored) {
+  const seed = seeds.get('leadership');
+  return seed.en.sections.flatMap((section, sectionIndex) =>
+    section.cards.map((card, cardIndex) => {
+      const id = `${sectionIndex}:${cardIndex}`;
+      const defaults = {
+        en: cardIdentity(card),
+        fr: cardIdentity(seed.fr.sections[sectionIndex].cards[cardIndex]),
+      };
+      const legacy = Object.fromEntries(languages.map((language) => {
+        const original = stored?.[language]?.sections?.[sectionIndex]?.cards?.[cardIndex];
+        return [language, Object.fromEntries(Object.entries(defaults[language]).map(([field, fallback]) =>
+          [field, typeof original?.[field] === 'string' ? original[field] : fallback],
+        ))];
+      }));
+      const hasOverride = languages.some((language) => !sameIdentity(legacy[language], defaults[language]));
+      const shared = stored?.sharedLeaders?.[id];
+      const conflict = !shared && hasOverride && !sameIdentity(legacy.en, legacy.fr)
+        ? legacy
+        : undefined;
+      return {
+        id,
+        sectionIndex,
+        cardIndex,
+        ...(shared || (hasOverride ? legacy.en : defaults.en)),
+        ...(conflict ? { conflict } : {}),
+      };
+    }),
+  );
+}
+
 function overlayLeadership(content, stored) {
-  for (const language of ['en', 'fr']) {
-    content[language].sections.forEach((section, si) => section.cards.forEach((card, ci) => {
-      const saved = stored?.[language]?.sections?.[si]?.cards?.[ci];
-      const { name, imageKey } = card;
-      for (const field of ['name', 'imageKey']) {
-        if (typeof saved?.[field] === 'string') card[field] = saved[field];
+  for (const leader of leadershipLeaders(stored)) {
+    for (const language of languages) {
+      const card = content[language].sections[leader.sectionIndex].cards[leader.cardIndex];
+      const identity = leader.conflict?.[language] || leader;
+      const original = cardIdentity(card);
+      card.name = identity.name;
+      if (identity.imageKey || Object.hasOwn(card, 'imageKey')) card.imageKey = identity.imageKey;
+      if (!sameIdentity(identity, original)) {
+        card.imageAlt = identity.name;
+        if (identity.imageKey) card.placeholder = false;
       }
-      if (saved && (card.name !== name || card.imageKey !== imageKey)) {
-        card.imageAlt = card.name;
-        if (card.imageKey) card.placeholder = false;
-      }
-    }));
+    }
   }
   return content;
 }
@@ -140,25 +111,42 @@ function leadershipContent(stored) {
 }
 
 function applyLeadershipUpdate(value, stored) {
-  const current = leadershipContent(stored);
-  const checked = validateContent('leadership', value);
-  const expected = JSON.parse(JSON.stringify(current));
-  for (const language of ['en', 'fr']) {
-    expected[language].sections.forEach((section, si) => section.cards.forEach((card, ci) => {
-      const updated = checked[language].sections[si].cards[ci];
-      card.name = updated.name;
-      card.imageKey = updated.imageKey;
-    }));
+  const current = leadershipLeaders(stored);
+  if (!Array.isArray(value) || value.length !== current.length)
+    throw invalid('Submit the complete leadership roster');
+  const incoming = new Map();
+  for (const row of value) {
+    if (!row || typeof row !== 'object' || Array.isArray(row)
+      || Object.keys(row).some((key) => !['id', 'name', 'imageKey', 'resolveConflict'].includes(key))
+      || typeof row.id !== 'string' || incoming.has(row.id))
+      throw invalid('Invalid leadership roster entry');
+    incoming.set(row.id, row);
   }
-  if (JSON.stringify(checked) !== JSON.stringify(expected)) throw invalid('Only leadership names and portraits can be changed');
-  const result = JSON.parse(JSON.stringify(stored || current));
-  for (const language of ['en', 'fr']) {
-    result[language].sections.forEach((section, si) => section.cards.forEach((card, ci) => {
-      card.name = checked[language].sections[si].cards[ci].name;
-      card.imageKey = checked[language].sections[si].cards[ci].imageKey;
-    }));
+  const sharedLeaders = {};
+  const seed = seeds.get('leadership');
+  for (const leader of current) {
+    const row = incoming.get(leader.id);
+    if (!row || (row.resolveConflict !== undefined && row.resolveConflict !== true))
+      throw invalid('Invalid leadership roster entry');
+    const { name, imageKey } = row;
+    if (typeof name !== 'string' || !name.trim() || name.length > 200 || /[\u0000-\u001f]/u.test(name))
+      throw invalid('A name of up to 200 characters is required');
+    if (typeof imageKey !== 'string' || imageKey.length > 500
+      || (imageKey && (!/^images\/[a-zA-Z0-9/_ .-]+$/u.test(imageKey) || imageKey.split('/').includes('..'))))
+      throw invalid('Invalid portrait image key');
+    if (!imageKey && languages.some((language) =>
+      !seed[language].sections[leader.sectionIndex].cards[leader.cardIndex].image))
+      throw invalid('A portrait image is required');
+    if (leader.conflict && row.resolveConflict !== true)
+      throw Object.assign(new Error('Resolve each conflicting leadership entry before saving'), { status: 409 });
+    const defaults = cardIdentity(seed.en.sections[leader.sectionIndex].cards[leader.cardIndex]);
+    // Do not pin an unedited bundled value just because another leader changed.
+    if (leader.conflict || !sameIdentity({ name, imageKey }, defaults)
+      || stored?.sharedLeaders?.[leader.id] || !sameIdentity(leader, defaults))
+      sharedLeaders[leader.id] = { name, imageKey };
   }
-  return result;
+  // Keep historical bilingual overrides intact even when superseded.
+  return { ...stored, sharedLeaders };
 }
 
 function portraitKeys(content) {
@@ -177,9 +165,9 @@ module.exports = {
   RESOURCES,
   getSeed,
   canEditResource,
-  validateContent,
   portraitKeys,
   leadershipContent,
+  leadershipLeaders,
   overlayLeadership,
   applyLeadershipUpdate,
 };

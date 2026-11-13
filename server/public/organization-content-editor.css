@@ -160,3 +160,20 @@
     padding: 14px;
   }
 }
+
+.organization-conflict {
+  border: 1px solid var(--border, #64748b);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.organization-conflict > p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.organization-field[hidden] {
+  display: none;
+}

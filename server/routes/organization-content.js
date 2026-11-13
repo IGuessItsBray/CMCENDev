@@ -10,9 +10,21 @@ const {
   canEditResource,
   portraitKeys,
   leadershipContent,
+  leadershipLeaders,
   applyLeadershipUpdate,
 } = require('../services/organization-content');
 const router = express.Router();
+function editorResponse(key, record) {
+  const content = leadershipContent(record?.content);
+  return {
+    key,
+    content,
+    leaders: leadershipLeaders(record?.content),
+    portraitUrls: portraitUrls(content),
+    version: record?.revision || 0,
+  };
+}
+
 function portraitUrls(content) {
   return Object.fromEntries(portraitKeys(content).map((key) => [key, buildPublicMediaUrl(key)]));
 }
@@ -61,23 +73,18 @@ router.get('/manage/:key', async (req, res) => {
   const record = await OrganizationContent.findOne({
     key: req.params.key,
   }).lean();
-  res.json({
-    key: req.params.key,
-    content: leadershipContent(record?.content),
-    portraitUrls: portraitUrls(leadershipContent(record?.content)),
-    version: record?.revision || 0,
-  });
+  res.json(editorResponse(req.params.key, record));
 });
 router.put('/manage/:key', async (req, res, next) => {
   try {
     if (
       !Number.isSafeInteger(req.body?.version) ||
       req.body.version < 0 ||
-      !req.body.content
+      !Array.isArray(req.body.leaders)
     ) {
       return res
         .status(400)
-        .json({ error: 'Content and current version are required' });
+        .json({ error: 'Leadership roster and current version are required' });
     }
     const key = req.params.key;
     const previous = await OrganizationContent.findOne({ key }).lean();
@@ -88,9 +95,9 @@ router.put('/manage/:key', async (req, res, next) => {
           error: 'Another editor changed this page. Reload before saving.',
         });
     const priorContent = leadershipContent(previous?.content);
-    const content = applyLeadershipUpdate(req.body.content, previous?.content);
-    const knownKeys = new Set(portraitKeys(priorContent));
-    for (const imageKey of portraitKeys(content).filter(
+    const content = applyLeadershipUpdate(req.body.leaders, previous?.content);
+    const knownKeys = new Set([...portraitKeys(priorContent), ...portraitKeys(leadershipContent())]);
+    for (const imageKey of portraitKeys(leadershipContent(content)).filter(
       (item) => !knownKeys.has(item),
     )) {
       const asset = await MediaAsset.findOne({
@@ -149,10 +156,10 @@ router.put('/manage/:key', async (req, res, next) => {
         after: leadershipContent(content),
       },
     });
-    res.json({ key, content: leadershipContent(saved.content), version: saved.revision, portraitUrls: portraitUrls(saved.content) });
+    res.json(editorResponse(key, saved));
   } catch (error) {
-    if (error.status === 400)
-      return res.status(400).json({ error: error.message });
+    if (error.status === 400 || error.status === 409)
+      return res.status(error.status).json({ error: error.message });
     next(error);
   }
 });

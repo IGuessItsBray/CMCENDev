@@ -14,6 +14,9 @@
       content = null,
       version = null;
     let portraitUrls = {};
+    let leaders = [];
+    const disclosureState = new Map();
+    let pendingFocus = null;
     let dirty = false,
       busy = false,
       disposed = false,
@@ -59,9 +62,14 @@
     function sync() {
       picker.disabled = busy;
       reload.disabled = busy || !content;
-      save.disabled = busy || !dirty || !content;
+      save.disabled =
+        busy ||
+        !dirty ||
+        !content ||
+        leaders.some((leader) => leader.conflict && !leader.resolveConflict);
       form.inert = busy;
       form.setAttribute("aria-busy", String(busy));
+      if (!busy) restoreFocus();
     }
     function markDirty() {
       dirty = true;
@@ -94,6 +102,8 @@
     }
     function mediaPicker(object, language) {
       const panel = el("details", "organization-media-picker");
+      panel.dataset.disclosureKey = `portrait:${object.id}`;
+      panel.open = disclosureState.get(panel.dataset.disclosureKey) ?? false;
       panel.append(
         el(
           "summary",
@@ -105,7 +115,7 @@
       search.type = "search";
       search.setAttribute(
         "aria-label",
-        `${t("Search portraits by name", "Rechercher des portraits par nom")} · ${language.toUpperCase()}`,
+        `${t("Search portraits by name", "Rechercher des portraits par nom")}`,
       );
       search.placeholder = t("Search by name…", "Rechercher par nom…");
       const submit = el("button", "", t("Search", "Rechercher"));
@@ -158,7 +168,7 @@
                 portraitUrls[item.key] = item.url;
 
                 markDirty();
-                render();
+                render(object.id);
               },
               { signal },
             );
@@ -210,7 +220,7 @@
         key === "imageKey" ? "div" : "label",
         "organization-field",
       );
-      wrapper.append(el("span", "", `${label} · ${language.toUpperCase()}`));
+      wrapper.append(el("span", "", `${label}`));
       const bool = typeof object[key] === "boolean";
       const multiline =
         key === "bio" ||
@@ -247,16 +257,17 @@
           const uploadName = el("input");
           uploadName.type = "text";
           uploadName.maxLength = 160;
-          uploadName.value = object.name || "";
+          uploadName.value = "";
           nameLabel.append(uploadName);
+          nameLabel.hidden = true;
           wrapper.append(nameLabel);
           wrapper.append(
             el(
               "small",
               "",
               t(
-                "Upload only portraits approved for public sharing. Files are public by link immediately; saving updates this page.",
-                "Téléversez uniquement des portraits approuvés pour diffusion publique. Les fichiers sont accessibles par lien immédiatement; l’enregistrement met à jour cette page.",
+                "Maximum 10 MiB per image. Upload only portraits approved for public sharing. Files are public by link immediately; saving updates this page.",
+                "Maximum de 10 Mio par image. Téléversez uniquement des portraits approuvés pour diffusion publique. Les fichiers sont accessibles par lien immédiatement; l’enregistrement met à jour cette page.",
               ),
             ),
           );
@@ -267,11 +278,38 @@
             "aria-label",
             t("Upload replacement portrait", "Téléverser un nouveau portrait"),
           );
+          const uploadSubmit = el(
+            "button",
+            "",
+            t("Upload portrait", "Téléverser le portrait"),
+          );
+          uploadSubmit.type = "button";
+          uploadSubmit.hidden = true;
           upload.addEventListener(
             "change",
+            () => {
+              const file = upload.files?.[0];
+              nameLabel.hidden = !file;
+              uploadSubmit.hidden = !file;
+              uploadName.value = file?.name?.replace(/\.[^.]+$/, "") || "";
+            },
+            { signal },
+          );
+          uploadSubmit.addEventListener(
+            "click",
             async () => {
               const file = upload.files?.[0];
               if (!file || busy) return;
+              if (file.size > 10 * 1024 * 1024) {
+                feedback(
+                  t(
+                    "Image exceeds 10 MiB. Choose a smaller image or export a compressed copy.",
+                    "L’image dépasse 10 Mio. Choisissez une image plus petite ou exportez une copie compressée.",
+                  ),
+                  true,
+                );
+                return;
+              }
               busy = true;
               sync();
               feedback(t("Uploading portrait…", "Téléversement du portrait…"));
@@ -299,7 +337,7 @@
                 input.value = result.key;
                 dirty = true;
 
-                render();
+                render(object.id);
                 feedback(
                   t(
                     "Portrait uploaded. Save changes to use it on the public page.",
@@ -316,26 +354,27 @@
             },
             { signal },
           );
-          wrapper.append(upload);
+          wrapper.append(upload, uploadSubmit);
         }
       }
     }
-    function pair(parent, objects, key) {
-      const row = el("div", "organization-language-pair");
-      for (const language of ["en", "fr"])
-        if (objects[language]) field(row, objects[language], key, language);
-      parent.append(row);
-    }
-    function disclosure(parent, heading, open = false) {
+    function disclosure(parent, heading, open = false, key = "") {
       const node = el("details", "organization-section");
-      node.open = open;
+      node.dataset.disclosureKey = key;
+      node.open = disclosureState.get(key) ?? open;
       node.append(el("summary", "", heading));
       const body = el("div", "organization-section-body");
       node.append(body);
       parent.append(node);
       return body;
     }
-    function render() {
+    function render(focusLeaderId) {
+      for (const node of form.querySelectorAll("details")) {
+        if (node.dataset.disclosureKey)
+          disclosureState.set(node.dataset.disclosureKey, node.open);
+      }
+      const scrollX = window.scrollX,
+        scrollY = window.scrollY;
       form.replaceChildren();
       const resource = resources.find((item) => item.key === selected);
       const page = {
@@ -347,8 +386,8 @@
           "p",
           "organization-help",
           t(
-            "Update names and portraits only. Appointments and page text are fixed; review both languages before saving.",
-            "Modifiez uniquement les noms et les portraits. Les postes et le texte de la page sont fixes; vérifiez les deux langues avant d’enregistrer.",
+            "Each leader has one name and portrait shared by both languages. Appointments and translated page text stay fixed.",
+            "Chaque personne a un seul nom et portrait pour les deux langues. Les postes et le texte traduit restent fixes.",
           ),
         ),
       );
@@ -359,37 +398,101 @@
             form,
             `${index + 1}. ${localized[french() ? "fr" : "en"].heading}`,
             true,
+            `section:${index}`,
           );
           section.cards.forEach((card, cardIndex) => {
             const cards = { en: card, fr: localized.fr.cards[cardIndex] };
-            const body = disclosure(sectionBody, `${card.role} — ${card.name}`);
-            const portraits = el("div", "organization-language-pair");
-            for (const language of ["en", "fr"]) {
-              const portraitCard = cards[language];
+            const leader = leaders.find(
+              (item) =>
+                item.sectionIndex === index && item.cardIndex === cardIndex,
+            );
+            if (!leader) return;
+            const activeCard = cards[french() ? "fr" : "en"];
+            const body = disclosure(
+              sectionBody,
+              `${activeCard.role} — ${leader.name}`,
+              !!leader.conflict,
+              `leader:${leader.id}`,
+            );
+            function portrait(parent, value, label) {
               const url =
-                portraitUrls[portraitCard.imageKey] || portraitCard.image;
+                portraitUrls[value.imageKey] ||
+                (!value.imageKey && activeCard.image);
               const figure = el("figure", "organization-portrait");
               if (url && /^(https?:\/\/|\/(?!\/))/.test(url)) {
                 const image = el("img");
                 image.src = url;
-                image.alt = portraitCard.imageAlt || portraitCard.name;
+                image.alt = value.name || "";
                 image.loading = "lazy";
                 figure.append(image);
               }
-              figure.append(
+              figure.append(el("figcaption", "", label));
+              parent.append(figure);
+            }
+            if (leader.conflict && !leader.resolveConflict) {
+              const conflict = el("div", "organization-conflict");
+              conflict.setAttribute("role", "group");
+              conflict.append(
                 el(
-                  "figcaption",
+                  "p",
                   "",
-                  `${t("Current portrait", "Portrait actuel")} · ${language.toUpperCase()}`,
+                  t(
+                    "Existing English and French entries differ. Choose which name and portrait to share, then edit if needed. Nothing changes until you save.",
+                    "Les entrées anglaise et française diffèrent. Choisissez le nom et le portrait communs, puis modifiez-les au besoin. Rien ne change avant l’enregistrement.",
+                  ),
                 ),
               );
-              portraits.append(figure);
+              for (const language of ["en", "fr"]) {
+                const value = leader.conflict[language];
+                portrait(
+                  conflict,
+                  value,
+                  `${language.toUpperCase()}: ${value.name}`,
+                );
+                const choose = el(
+                  "button",
+                  "",
+                  t("Use", "Utiliser") + " " + language.toUpperCase(),
+                );
+                choose.type = "button";
+                choose.addEventListener(
+                  "click",
+                  () => {
+                    leader.name = value.name;
+                    leader.imageKey = value.imageKey;
+                    leader.resolveConflict = true;
+                    markDirty();
+                    render(leader.id);
+                  },
+                  { signal },
+                );
+                conflict.append(choose);
+              }
+              body.append(conflict);
+              return;
             }
-            body.append(portraits);
-            for (const key of ["name", "imageKey"]) pair(body, cards, key);
+            portrait(body, leader, t("Current portrait", "Portrait actuel"));
+            for (const key of ["name", "imageKey"])
+              field(body, leader, key, french() ? "fr" : "en");
           });
         });
+      if (focusLeaderId) pendingFocus = { id: focusLeaderId, scrollX, scrollY };
+      if (!busy) restoreFocus();
+      if (Number.isFinite(scrollX) && Number.isFinite(scrollY))
+        window.scrollTo?.(scrollX, scrollY);
     }
+    function restoreFocus() {
+      if (!pendingFocus) return;
+      const { id, scrollX, scrollY } = pendingFocus;
+      pendingFocus = null;
+      const node = [...form.querySelectorAll("details")].find(
+        (item) => item.dataset.disclosureKey === `leader:${id}`,
+      );
+      node?.querySelector("summary")?.focus({ preventScroll: true });
+      if (Number.isFinite(scrollX) && Number.isFinite(scrollY))
+        window.scrollTo?.(scrollX, scrollY);
+    }
+
     async function load(key) {
       const requestId = ++serial;
       busy = true;
@@ -403,6 +506,7 @@
         selected = key;
         picker.value = key;
         content = data.content;
+        leaders = data.leaders || [];
         version = data.version;
         portraitUrls = data.portraitUrls || {};
         dirty = false;
@@ -451,17 +555,36 @@
     save.addEventListener(
       "click",
       async () => {
-        if (busy || !dirty) return;
+        if (
+          busy ||
+          !dirty ||
+          leaders.some((leader) => leader.conflict && !leader.resolveConflict)
+        )
+          return;
         busy = true;
         sync();
         feedback(t("Saving…", "Enregistrement…"));
         try {
           const result = await api(
             `/api/organization-content/manage/${encodeURIComponent(selected)}`,
-            { method: "PUT", body: { content, version } },
+            {
+              method: "PUT",
+              body: {
+                version,
+                leaders: leaders.map(
+                  ({ id, name, imageKey, resolveConflict }) => ({
+                    id,
+                    name,
+                    imageKey,
+                    ...(resolveConflict ? { resolveConflict: true } : {}),
+                  }),
+                ),
+              },
+            },
           );
           if (disposed) return;
           content = result.content;
+          leaders = result.leaders || [];
           version = result.version;
           if (result.portraitUrls) portraitUrls = result.portraitUrls;
           dirty = false;

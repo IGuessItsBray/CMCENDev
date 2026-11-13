@@ -10,20 +10,53 @@ async function setup({
   rejectSave = false,
   resources = [{ key: 'leadership', label: 'Branch', kind: 'leadership' }],
   content = {
-    en: { heading: 'Branch', sections: [{ heading: 'Council', cards: [{ name: 'Example', role: 'Advisor', imageKey: '' }] }] },
-    fr: { heading: 'Branche', sections: [{ heading: 'Conseil', cards: [{ name: 'Exemple', role: 'Conseiller', imageKey: '' }] }] },
+    en: {
+      heading: 'Branch',
+      sections: [
+        {
+          heading: 'Council',
+          cards: [{ name: 'Example', role: 'Advisor', imageKey: '' }],
+        },
+      ],
+    },
+    fr: {
+      heading: 'Branche',
+      sections: [
+        {
+          heading: 'Conseil',
+          cards: [{ name: 'Exemple', role: 'Conseiller', imageKey: '' }],
+        },
+      ],
+    },
   },
   portraitUrls = {},
   media = [],
+  leaders = [
+    {
+      id: 'leader-0-0',
+      sectionIndex: 0,
+      cardIndex: 0,
+      name: 'Example',
+      imageKey: '',
+    },
+  ],
+  permissions = {},
+  uploadResult = { key: 'images/upload.jpg', url: '/uploaded.jpg' },
 } = {}) {
   const host = new Element('div');
   const root = { querySelector: () => host };
   const requests = [];
+  const focusStates = [];
   const document = {
     documentElement: { lang: 'en' },
     createElement(tag) {
       const element = new Element(tag);
       element.classList = { toggle() {} };
+      element.focus = () =>
+        focusStates.push({
+          tag: element.tagName,
+          inert: !!element.closest('.organization-form')?.inert,
+        });
       return element;
     },
   };
@@ -33,207 +66,295 @@ async function setup({
       path.join(__dirname, '../public/organization-content-editor.js'),
       'utf8',
     ),
-    { document, window, AbortController, URLSearchParams },
+    { document, window, AbortController, URLSearchParams, FormData },
   );
   const api = async (url, options = {}) => {
     requests.push({ url, options });
     if (url.startsWith('/api/organization-content/media?'))
       return { media, nextCursor: '' };
+    if (url === '/api/upload') return uploadResult;
     if (options.method === 'PUT') {
       if (rejectSave)
         throw new Error(
           'Someone else changed this content. Reload before saving.',
         );
-      return { version: options.body.version + 1, content: structuredClone(options.body.content) };
+      return {
+        version: options.body.version + 1,
+        content: structuredClone(content),
+        leaders: options.body.leaders.map((leader, index) => ({
+          ...leader,
+          sectionIndex: leaders[index].sectionIndex,
+          cardIndex: leaders[index].cardIndex,
+        })),
+      };
     }
     if (url.endsWith('/manage')) return { resources };
-    return { content: structuredClone(content), portraitUrls, version: 1 };
+    return {
+      content: structuredClone(content),
+      leaders: structuredClone(leaders),
+      portraitUrls,
+      version: 1,
+    };
   };
   const instance = window.OrganizationContentEditor.mountLeadership({
     api,
     root,
-    permissions: {},
+    permissions,
   });
   await flush();
-  return { host, requests, instance };
+  return { host, requests, instance, focusStates };
 }
 
-test('saving preserves both languages and sends the loaded version', async () => {
+test('one shared name and portrait picker save only allowed shared fields and version', async () => {
   const { host, requests, instance } = await setup();
-  const input = host.querySelector('input');
-  input.value = 'Updated branch';
-  await input.fire('input');
-  assert.equal(instance.hasUnsavedChanges(), true);
-  await host.querySelector('.organization-save').fire('click');
-  const request = requests.find((r) => r.options.method === 'PUT');
-  assert.equal(request.options.body.version, 1);
-  assert.equal(request.options.body.content.en.sections[0].cards[0].name, 'Updated branch');
-  assert.equal(request.options.body.content.fr.heading, 'Branche');
-  assert.equal(request.options.body.content.fr.sections[0].cards[0].name, 'Exemple');
-  assert.equal(instance.hasUnsavedChanges(), false);
+  assert.equal(host.querySelectorAll('.organization-media-picker').length, 1);
+  assert.equal(host.querySelectorAll('textarea').length, 0);
+  for (const name of ['First', 'Second']) {
+    const input = host.querySelector('input');
+    input.value = name;
+    await input.fire('input');
+    await host.querySelector('.organization-save').fire('click');
+  }
+  const saves = requests.filter((r) => r.options.method === 'PUT');
+  assert.deepEqual(
+    saves.map((r) => r.options.body.version),
+    [1, 2],
+  );
+  assert.deepEqual(
+    saves.map((r) => r.options.body.leaders[0].name),
+    ['First', 'Second'],
+  );
+  assert.deepEqual(Object.keys(saves[0].options.body), ['version', 'leaders']);
+  assert.deepEqual(Object.keys(saves[0].options.body.leaders[0]), [
+    'id',
+    'name',
+    'imageKey',
+  ]);
   instance.dispose();
 });
-
-test('a rejected save preserves unsaved edits and blocks discarded navigation', async () => {
+test('rejected save preserves edits and blocks navigation', async () => {
   const { host, instance } = await setup({ rejectSave: true });
   const input = host.querySelector('input');
-  input.value = 'Keep this edit';
+  input.value = 'Keep';
   await input.fire('input');
   await host.querySelector('.organization-save').fire('click');
-  assert.equal(input.value, 'Keep this edit');
+  assert.equal(input.value, 'Keep');
   assert.equal(instance.hasUnsavedChanges(), true);
   assert.equal(instance.canNavigate(), false);
-  assert.match(
-    host.querySelector('.organization-status').textContent,
-    /Reload/,
-  );
   instance.dispose();
 });
-
-test('no assigned areas does not fetch arbitrary content or enable saving', async () => {
+test('no assigned resources never fetches a roster', async () => {
   const { host, requests, instance } = await setup({ resources: [] });
   assert.equal(requests.length, 1);
   assert.equal(host.querySelector('.organization-save').disabled, true);
-  assert.equal(instance.hasUnsavedChanges(), false);
   instance.dispose();
 });
-
-test('leadership portraits render supplied public URLs without making immutable image fields editable', async () => {
-  const localized = {
-    heading: 'Leadership',
-    sections: [
-      {
-        heading: 'Council',
-        cards: [
-          {
-            name: 'Example',
-            role: 'Advisor',
-            imageKey: 'images/example.jpg',
-            image: '/assets/fallback.png',
-            imageAlt: 'Example portrait',
-            bio: '',
-          },
-        ],
-      },
-    ],
-  };
-  const { host, instance } = await setup({
-    resources: [{ key: 'leadership', label: 'Leadership', kind: 'leadership' }],
-    content: { en: localized, fr: structuredClone(localized) },
-    portraitUrls: {
-      'images/example.jpg': 'https://cdn.example.org/images/example.jpg',
-    },
-  });
-  const images = host.querySelectorAll('img');
-  assert.equal(images.length, 2);
-  assert.equal(images[0].src, 'https://cdn.example.org/images/example.jpg');
-  assert.equal(images[0].alt, 'Example portrait');
-  assert.equal(
-    host
-      .querySelectorAll('input')
-      .some((input) => input.value === '/assets/fallback.png'),
-    false,
-  );
-  instance.dispose();
-});
-
-test('leadership portrait picker searches existing images and saves a selection without exposing storage key input', async () => {
-  const localized = {
-    heading: 'Leaders',
-    sections: [
-      {
-        heading: 'Council',
-        cards: [
-          {
-            name: 'Example',
-            role: 'Advisor',
-            imageKey: 'images/old.jpg',
-            imageAlt: 'Portrait',
-            bio: '',
-          },
-        ],
-      },
-    ],
-  };
+test('existing portrait renders once; selection updates shared portrait without storage input', async () => {
   const { host, requests, instance } = await setup({
-    content: { en: localized, fr: structuredClone(localized) },
-    media: [
+    leaders: [
       {
-        key: 'images/new.jpg',
-        url: 'https://cdn.example.org/new.jpg',
-        name: 'New portrait',
+        id: 'a',
+        sectionIndex: 0,
+        cardIndex: 0,
+        name: 'Example',
+        imageKey: 'images/old.jpg',
       },
     ],
+    portraitUrls: { 'images/old.jpg': '/old.jpg' },
+    media: [{ key: 'images/new.jpg', url: '/new.jpg', name: 'New' }],
   });
+  assert.equal(host.querySelectorAll('img').length, 1);
+  assert.equal(host.querySelector('img').src, '/old.jpg');
   assert.equal(
-    host
-      .querySelectorAll('input')
-      .some((input) => input.value === 'images/old.jpg'),
+    host.querySelectorAll('input').some((i) => i.value === 'images/old.jpg'),
     false,
   );
   const picker = host.querySelector('.organization-media-picker');
   picker.querySelector('input').value = 'New';
   await picker.querySelector('button').fire('click');
   await flush();
-  assert.ok(requests.some((request) => request.url.includes('/media?q=New')));
   await host.querySelector('.organization-media-item').fire('click');
-  assert.equal(instance.hasUnsavedChanges(), true);
   await host.querySelector('.organization-save').fire('click');
-  const saved = requests.find((request) => request.options.method === 'PUT');
   assert.equal(
-    saved.options.body.content.en.sections[0].cards[0].imageKey,
+    requests.find((r) => r.options.method === 'PUT').options.body.leaders[0]
+      .imageKey,
     'images/new.jpg',
   );
-  assert.equal(
-    saved.options.body.content.fr.sections[0].cards[0].imageKey,
-    'images/old.jpg',
-  );
   instance.dispose();
 });
-
-test('leadership exposes only names and portrait selection, preserving fixed copy on save', async () => {
-  const card = {
-    name: 'Existing name', rank: 'Colonel', role: 'Advisor',
-    bio: 'Fixed biography', imageAlt: 'Fixed description', profileUrl: '/fixed-profile',
-    imageKey: 'images/existing.jpg', image: '/fixed.png', placeholder: true, featured: true,
+test('conflicting legacy entries require an explicit choice and remain unchanged on load', async () => {
+  const conflict = {
+    en: { name: 'English', imageKey: 'images/en.jpg' },
+    fr: { name: 'French', imageKey: 'images/fr.jpg' },
   };
-  const localized = { heading: 'Fixed page', heroSubtitle: 'Fixed introduction',
-    sections: [{ heading: 'Fixed section', description: 'Fixed section copy', cards: [card] }] };
   const { host, requests, instance } = await setup({
-    content: { en: localized, fr: structuredClone(localized) },
+    leaders: [
+      {
+        id: 'a',
+        sectionIndex: 0,
+        cardIndex: 0,
+        name: 'English',
+        imageKey: 'images/en.jpg',
+        conflict,
+      },
+    ],
   });
-  const inputs = host.querySelectorAll('input');
-  for (const value of ['Colonel', 'Advisor', 'Fixed biography', 'Fixed description',
-    '/fixed-profile', 'Fixed page', 'Fixed introduction', 'Fixed section', 'Fixed section copy']) {
-    assert.equal(inputs.some(input => input.value === value), false, value);
-  }
-  assert.equal(host.querySelectorAll('textarea').length, 0);
-  assert.equal(inputs.some(input => input.type === 'checkbox'), false);
-  const name = inputs.find(input => input.value === 'Existing name');
-  name.value = 'New name';
-  await name.fire('input');
+  assert.equal(instance.hasUnsavedChanges(), false);
+  assert.equal(host.querySelector('.organization-save').disabled, true);
+  assert.equal(host.querySelectorAll('.organization-media-picker').length, 0);
+  assert.equal(
+    requests.some((r) => r.options.method === 'PUT'),
+    false,
+  );
+  await host
+    .querySelectorAll('button')
+    .find((b) => b.textContent === 'Use FR')
+    .fire('click');
+  assert.equal(host.querySelector('input').value, 'French');
   await host.querySelector('.organization-save').fire('click');
-  const saved = requests.find(request => request.options.method === 'PUT').options.body.content;
-  assert.deepEqual({ ...saved.en.sections[0].cards[0] }, { ...card, name: 'New name' });
-  assert.equal(saved.en.heading, 'Fixed page');
-  assert.equal(saved.en.sections[0].description, 'Fixed section copy');
+  const saved = requests.find((r) => r.options.method === 'PUT').options.body
+    .leaders[0];
+  assert.equal(saved.resolveConflict, true);
+  assert.equal(saved.name, 'French');
+  assert.equal(saved.imageKey, 'images/fr.jpg');
+  instance.dispose();
+});
+test('upload name only appears after selecting a file, and named upload updates shared portrait', async () => {
+  const { host, requests, instance } = await setup({
+    permissions: { canUploadMedia: true },
+  });
+  const nameLabel = host
+    .querySelectorAll('label')
+    .find((label) => label.textContent === 'Name for new portrait');
+  assert.ok(nameLabel);
+  assert.equal(nameLabel.hidden, true);
+  const upload = host
+    .querySelectorAll('input')
+    .find((input) => input.type === 'file');
+  const file = new Blob(['photo'], { type: 'image/jpeg' });
+  file.name = 'Headshot.jpg';
+  upload.files = [file];
+  await upload.fire('change');
+  assert.equal(nameLabel.hidden, false);
+  assert.equal(nameLabel.querySelector('input').value, 'Headshot');
+  nameLabel.querySelector('input').value = 'Approved headshot';
+  await host
+    .querySelectorAll('button')
+    .find((b) => b.textContent === 'Upload portrait')
+    .fire('click');
+  const request = requests.find((r) => r.url === '/api/upload');
+  assert.equal(request.options.body.get('sourceName'), 'Approved headshot');
+  await host.querySelector('.organization-save').fire('click');
+  assert.equal(
+    requests.find((r) => r.options.method === 'PUT').options.body.leaders[0]
+      .imageKey,
+    'images/upload.jpg',
+  );
   instance.dispose();
 });
 
-
-test('editing after save changes the canonical roster and sends the new version', async () => {
-  const { host, instance, requests } = await setup();
-  for (const name of ['First edit', 'Second edit']) {
-    const input = host.querySelector('input');
-    input.value = name;
-    await input.fire('input');
-    await host.querySelector('.organization-save').fire('click');
-  }
-  const saves = requests.filter((request) => request.options.method === 'PUT');
-  assert.deepEqual(saves.map(({ options }) => options.body.version), [1, 2]);
-  assert.deepEqual(
-    saves.map(({ options }) => options.body.content.en.sections[0].cards[0].name),
-    ['First edit', 'Second edit'],
+test('oversized portrait is rejected before any upload request', async () => {
+  const { host, requests, instance } = await setup({
+    permissions: { canUploadMedia: true },
+  });
+  const upload = host
+    .querySelectorAll('input')
+    .find((input) => input.type === 'file');
+  upload.files = [{ name: 'large.jpg', size: 10 * 1024 * 1024 + 1 }];
+  await upload.fire('change');
+  await host
+    .querySelectorAll('button')
+    .find((button) => button.textContent === 'Upload portrait')
+    .fire('click');
+  assert.equal(
+    requests.some((request) => request.url === '/api/upload'),
+    false,
   );
+  assert.match(
+    host.querySelector('.organization-status').textContent,
+    /exceeds 10 MiB/,
+  );
+  assert.equal(instance.hasUnsavedChanges(), false);
+  instance.dispose();
+});
+
+const disclosureFor = (host, key) =>
+  host
+    .querySelectorAll('details')
+    .find((node) => node.dataset.disclosureKey === key);
+
+test('portrait selection preserves appointment, section and picker expansion; manual close survives save', async () => {
+  const { host, requests, instance } = await setup({
+    media: [{ key: 'images/chosen.jpg', url: '/chosen.jpg', name: 'Chosen' }],
+  });
+  disclosureFor(host, 'leader:leader-0-0').open = true;
+  disclosureFor(host, 'portrait:leader-0-0').open = true;
+  const picker = host.querySelector('.organization-media-picker');
+  await picker.querySelector('button').fire('click');
+  await flush();
+  await host.querySelector('.organization-media-item').fire('click');
+  assert.equal(disclosureFor(host, 'leader:leader-0-0').open, true);
+  assert.equal(disclosureFor(host, 'section:0').open, true);
+  assert.equal(disclosureFor(host, 'portrait:leader-0-0').open, true);
+  disclosureFor(host, 'portrait:leader-0-0').open = false;
+  disclosureFor(host, 'leader:leader-0-0').open = false;
+  disclosureFor(host, 'section:0').open = false;
+  await host.querySelector('.organization-save').fire('click');
+  assert.equal(
+    requests.some((request) => request.options.method === 'PUT'),
+    true,
+  );
+  for (const key of ['section:0', 'leader:leader-0-0', 'portrait:leader-0-0'])
+    assert.equal(disclosureFor(host, key).open, false, key);
+  instance.dispose();
+});
+
+test('successful upload and save keep the same appointment expanded', async () => {
+  const { host, instance, focusStates } = await setup({
+    permissions: { canUploadMedia: true },
+  });
+  disclosureFor(host, 'leader:leader-0-0').open = true;
+  const upload = host
+    .querySelectorAll('input')
+    .find((input) => input.type === 'file');
+  const file = new Blob(['image'], { type: 'image/jpeg' });
+  file.name = 'portrait.jpg';
+  upload.files = [file];
+  await upload.fire('change');
+  await host
+    .querySelectorAll('button')
+    .find((button) => button.textContent === 'Upload portrait')
+    .fire('click');
+  assert.equal(disclosureFor(host, 'leader:leader-0-0').open, true);
+  assert.deepEqual(focusStates, [{ tag: 'SUMMARY', inert: false }]);
+  await host.querySelector('.organization-save').fire('click');
+  assert.equal(disclosureFor(host, 'leader:leader-0-0').open, true);
+  instance.dispose();
+});
+
+test('resolving a legacy conflict preserves the expanded appointment', async () => {
+  const { host, instance } = await setup({
+    leaders: [
+      {
+        id: 'conflict',
+        sectionIndex: 0,
+        cardIndex: 0,
+        name: 'EN',
+        imageKey: '',
+        conflict: {
+          en: { name: 'EN', imageKey: '' },
+          fr: { name: 'FR', imageKey: '' },
+        },
+      },
+    ],
+  });
+  assert.equal(disclosureFor(host, 'leader:conflict').open, true);
+  await host
+    .querySelectorAll('button')
+    .find((button) => button.textContent === 'Use FR')
+    .fire('click');
+  assert.equal(disclosureFor(host, 'leader:conflict').open, true);
+  await host.querySelector('.organization-save').fire('click');
+  assert.equal(disclosureFor(host, 'leader:conflict').open, true);
   instance.dispose();
 });

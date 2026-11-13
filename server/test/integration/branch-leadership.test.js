@@ -17,7 +17,7 @@ const User = require('../../models/User');
 const Role = require('../../models/Role');
 const AuditLog = require('../../models/AuditLog');
 const MediaAsset = require('../../models/MediaAsset');
-const { getSeed } = require('../../services/organization-content');
+const { getSeed, leadershipLeaders } = require('../../services/organization-content');
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(
@@ -78,30 +78,41 @@ test('leadership replacements validate uploaded portraits and prevent their dele
     { username: 'association' },
     { $set: { role: 'administrator' } },
   );
-  const content = getSeed('leadership');
-  content.en.sections[0].cards[0].imageKey = 'images/new-leader.webp';
+  const leaders = roster();
+  leaders[0].imageKey = 'images/new-leader.webp';
   const path = '/api/organization-content/manage/leadership';
   await request(app)
     .put(path)
     .set('Authorization', auth)
-    .send({ content, version: 0 })
+    .send({ leaders, version: 0 })
     .expect(400);
   await MediaAsset.create({
     key: 'images/new-leader.webp',
     mimeType: 'image/webp',
+    variants: {
+      medium: { key: 'images/portrait/medium.webp', width: 900 },
+      thumb: { key: 'images/portrait/thumb.webp', width: 400 },
+      large: { key: 'images/portrait/large.webp', width: 900 },
+      hero: { key: 'images/../invalid.webp', width: 2200 },
+    },
   });
   await request(app)
     .put(path)
     .set('Authorization', auth)
-    .send({ content, version: 0 })
+    .send({ leaders, version: 0 })
     .expect(200);
   const publicPage = await request(app)
     .get('/page-content/leadership.json')
     .expect(200);
-  assert.match(
-    publicPage.body.en.sections[0].cards[0].image,
-    /images\/new-leader.webp$/u,
-  );
+  for (const language of ['en', 'fr']) {
+    const cards = publicPage.body[language].sections[0].cards;
+    assert.match(cards[0].image, /images\/new-leader.webp$/u);
+    assert.deepEqual(cards[0].imageVariants, [
+      { width: 400, url: `${process.env.CDN_PUBLIC_BASE_URL}/images/portrait/thumb.webp` },
+      { width: 900, url: `${process.env.CDN_PUBLIC_BASE_URL}/images/portrait/large.webp` },
+    ]);
+    assert.equal(cards[1].imageVariants, undefined);
+  }
   const { deleteContentMediaAsset } = require('../../services/media-assets');
   const result = await deleteContentMediaAsset({
     mediaUrl: 'images/new-leader.webp',
@@ -111,27 +122,71 @@ test('leadership replacements validate uploaded portraits and prevent their dele
   assert.equal(result.references[0].type, 'leadership');
 });
 
-test('leadership public copy stays bundled and staff cannot overwrite fixed fields', async () => {
-  await User.updateOne({ username: 'association' }, { $set: { role: 'administrator' } });
-  const old = getSeed('leadership');
+function roster(leaders = leadershipLeaders()) {
+  return leaders.map(({ id, name, imageKey }) => ({ id, name, imageKey }));
+}
+
+test('shared name uses the same value in both locales without overwriting fixed copy', async () => {
+  const url = '/api/organization-content/manage/leadership';
+  const baseline = getSeed('leadership');
+  const old = structuredClone(baseline);
   old.en.heading = 'Former override';
   await OrganizationContent.create({ key: 'leadership', content: old, revision: 1 });
-  const url = '/api/organization-content/manage/leadership';
   const loaded = await request(app).get(url).set('Authorization', auth).expect(200);
-  assert.equal(loaded.body.content.en.heading, getSeed('leadership').en.heading);
-  const changed = loaded.body.content;
-  changed.fr.sections[0].cards[0].name = 'New name';
-  await request(app).put(url).set('Authorization', auth).send({ content: changed, version: 1 }).expect(200);
+  assert.equal(loaded.body.content.en.heading, baseline.en.heading);
+  assert.equal(loaded.body.leaders[0].conflict, undefined);
+  const leaders = roster(loaded.body.leaders);
+  leaders[0].name = 'New name';
+  await request(app).put(url).set('Authorization', auth).send({ leaders, version: 1 }).expect(200);
   const stored = await OrganizationContent.findOne({ key: 'leadership' }).lean();
-  assert.equal(stored.content.en.heading, 'Former override');
+  assert.deepEqual(stored.content.en, old.en);
+  assert.deepEqual(stored.content.fr, old.fr);
   const publicPage = await request(app).get('/page-content/leadership.json').expect(200);
-  assert.equal(publicPage.body.en.heading, getSeed('leadership').en.heading);
-  const next = await request(app).get(url).set('Authorization', auth).expect(200);
-  next.body.content.fr.sections[0].cards[0].rank = 'Forbidden';
-  await request(app).put(url).set('Authorization', auth).send({ content: next.body.content, version: 2 }).expect(400);
-  const log = await AuditLog.findOne({action: 'page.leadership.updated'}).lean();
-  assert.equal(log.metadata.before.fr.sections[0].cards[0].name, old.fr.sections[0].cards[0].name);
+  for (const language of ['en', 'fr']) {
+    const card = publicPage.body[language].sections[0].cards[0];
+    assert.equal(card.name, 'New name');
+    assert.equal(card.rank, baseline[language].sections[0].cards[0].rank);
+    assert.equal(card.role, baseline[language].sections[0].cards[0].role);
+    assert.equal(publicPage.body[language].heading, baseline[language].heading);
+  }
+  await request(app).put(url).set('Authorization', auth).send({ leaders, version: 1 }).expect(409);
+  const log = await AuditLog.findOne({ action: 'page.leadership.updated' }).lean();
   assert.equal(log.metadata.after.fr.sections[0].cards[0].name, 'New name');
-  await request(app).put(url).set('Authorization', auth).send({ content: changed, version: 1 }).expect(409);
+  leaders[0].rank = 'Forbidden';
+  await request(app).put(url).set('Authorization', auth).send({ leaders, version: 2 }).expect(400);
   assert.equal((await OrganizationContent.findOne({ key: 'leadership' }).lean()).revision, 2);
+});
+
+test('divergent saved pairs remain public and intact until an explicit resolution', async () => {
+  const url = '/api/organization-content/manage/leadership';
+  const old = getSeed('leadership');
+  const english = old.en.sections[0].cards[0];
+  const french = old.fr.sections[0].cards[0];
+  english.name = 'Former English name';
+  french.name = 'Former French name';
+  french.imageKey = 'images/alternate.webp';
+  await OrganizationContent.create({ key: 'leadership', content: old, revision: 1 });
+  const loaded = await request(app).get(url).set('Authorization', auth).expect(200);
+  assert.deepEqual(loaded.body.leaders[0].conflict, {
+    en: { name: english.name, imageKey: english.imageKey },
+    fr: { name: french.name, imageKey: french.imageKey },
+  });
+  assert.match(loaded.body.portraitUrls[french.imageKey], /alternate\.webp$/u);
+  const before = await request(app).get('/page-content/leadership.json').expect(200);
+  assert.equal(before.body.fr.sections[0].cards[0].name, french.name);
+  assert.equal(before.body.en.sections[0].cards[0].name, english.name);
+  const leaders = roster(loaded.body.leaders);
+  await request(app).put(url).set('Authorization', auth).send({ leaders, version: 1 }).expect(409);
+  Object.assign(leaders[0], { ...loaded.body.leaders[0].conflict.fr, resolveConflict: true });
+  const saved = await request(app).put(url).set('Authorization', auth).send({ leaders, version: 1 }).expect(200);
+  assert.equal(saved.body.leaders[0].conflict, undefined);
+  const after = await request(app).get('/page-content/leadership.json').expect(200);
+  for (const language of ['en', 'fr']) {
+    const card = after.body[language].sections[0].cards[0];
+    assert.equal(card.name, french.name);
+    assert.equal(card.imageKey, french.imageKey);
+  }
+  const stored = await OrganizationContent.findOne({ key: 'leadership' }).lean();
+  assert.deepEqual(stored.content.en, old.en);
+  assert.deepEqual(stored.content.fr, old.fr);
 });

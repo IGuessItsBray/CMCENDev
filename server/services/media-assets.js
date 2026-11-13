@@ -8,6 +8,8 @@ const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
 const Page = require('../models/Page');
 const AdoptDisplay = require('../models/AdoptDisplay');
+const OrganizationContent = require('../models/OrganizationContent');
+const { leadershipContent, portraitKeys } = require('./organization-content');
 const RetirementMessage = require('../models/RetirementMessage');
 const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const {
@@ -286,7 +288,7 @@ function getPageMediaReferences(blocks = []) {
 }
 
 async function getContentMediaReferences(assetKeys) {
-  const [events, retirementMessages, lastPostMessages, newsArticles, pages, displays] =
+  const [events, retirementMessages, lastPostMessages, newsArticles, pages, displays, leadership] =
     await Promise.all([
       Event.find({ $or: [{ imagePath: { $nin: [null, ''] } }, { formattedBody: { $exists: true } }] })
         .select('_id imagePath formattedBody')
@@ -314,6 +316,7 @@ async function getContentMediaReferences(assetKeys) {
         .lean(),
       Page.find({}).select('_id blocks').lean(),
       AdoptDisplay.find({ imageUrl: { $nin: [null, ''] } }).select('_id imageUrl').lean(),
+      OrganizationContent.findOne({ key: 'leadership' }).select('_id content').lean(),
     ]);
   const references = [];
   const addReference = (type, document, field, value) => {
@@ -351,6 +354,7 @@ async function getContentMediaReferences(assetKeys) {
     );
   });
   displays.forEach((item) => addReference('adoptDisplay', item, 'imageUrl', item.imageUrl));
+  portraitKeys(leadershipContent(leadership?.content)).forEach((key) => addReference('leadership', leadership || { _id: 'leadership' }, 'portrait', key));
   pages.forEach((page) => {
     getPageMediaReferences(page.blocks).forEach(([value, field]) => {
       addReference('page', page, field, value);

@@ -1011,7 +1011,27 @@ test('Audit Log is the last admin destination while other sidebar order is prese
   const html = fs.readFileSync(path.join(__dirname, '../public/dashboard-next.html'), 'utf8');
   const nav = html.slice(html.indexOf('class="admin-sidebar-sections"'), html.indexOf('</nav>', html.indexOf('class="admin-sidebar-sections"')));
   const links = [...nav.matchAll(/id="(admin\w+Link)"/g)].map((match) => match[1]);
-  assert.deepEqual(links, ['adminContentLink', 'adminArticlesLink', 'adminUsersLink', 'adminRolesLink', 'adminBannersLink', 'adminSubscriptionsLink', 'adminEmailLink', 'adminBackupsLink', 'adminPagesLink', 'adminTranslationsLink', 'adminMediaLink', 'adminCertificatesLink', 'adminAnalyticsLink', 'adminAwardsLink', 'adminAdoptLink', 'adminAuditLink']);
+  assert.deepEqual(links, ['adminContentLink', 'adminArticlesLink', 'adminUsersLink', 'adminRolesLink', 'adminBannersLink', 'adminSubscriptionsLink', 'adminEmailLink', 'adminBackupsLink', 'adminPagesLink', 'adminLeadershipLink', 'adminTranslationsLink', 'adminMediaLink', 'adminCertificatesLink', 'adminAnalyticsLink', 'adminAwardsLink', 'adminAdoptLink', 'adminAuditLink']);
+});
+
+test('Branch leadership navigation requires its dedicated permission', async () => {
+  for (const canManageLeadership of [false, true]) {
+    let mounted = 0;
+    const page = setup({
+      url: 'http://localhost/dashboard-next?area=leadership',
+      api: async () => ({ permissions: { canReadUsers: true, canManageLeadership } }),
+    });
+    page.window.OrganizationContentEditor = {
+      mountLeadership() {
+        mounted += 1;
+        return { dispose() {} };
+      },
+    };
+    await flush();
+    assert.equal(page.element('adminLeadershipLink').hidden, !canManageLeadership);
+    assert.equal(page.element('adminLeadership').hidden, !canManageLeadership);
+    assert.equal(mounted, canManageLeadership ? 1 : 0);
+  }
 });
 
 test('Backups requires the exact developer role even if the client permission is granted', async () => {

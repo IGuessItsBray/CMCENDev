@@ -65,6 +65,7 @@ const apiRateLimit = rateLimitByIp(
 );
 app.set('trust proxy', getTrustProxy());
 app.use(requestDiagnostics);
+app.use('/api/organization-content', express.json({ limit: '400kb' }));
 app.use(express.json());
 app.use(setStandardResponseHeaders);
 app.use(blockKnownAiCrawlers);
@@ -242,6 +243,7 @@ app.use('/api', diagnosticsRoutes);
 app.use('/api', timerRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/organization-content', require('./routes/organization-content'));
 app.use('/api/admin/email', adminEmailRoutes);
 app.use('/api/admin/backups', adminBackupRoutes);
 app.use('/api/admin/archive-review', require('./routes/archive-review'));

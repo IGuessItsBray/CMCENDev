@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="/dashboard-next-backups.css" />
     <link rel="stylesheet" href="/pages-editor.css" />
     <link rel="stylesheet" href="/dashboard-next-pages.css" />
+    <link rel="stylesheet" href="/organization-content-editor.css" />
     <link rel="stylesheet" href="/dashboard-next-translations.css" />
     <link rel="stylesheet" href="/dashboard-next-media.css" />
     <link rel="stylesheet" href="/dashboard-next-certificates.css" />
@@ -31,6 +32,7 @@
     <link rel="stylesheet" href="/body-content.css" />
     <link rel="stylesheet" href="/dashboard-next-content.css" />
     <script src="/app-utils.js" defer></script>
+    <script src="/organization-content-editor.js" defer></script>
     <script src="/translations.js" defer></script>
     <script src="/date-time-picker.js" defer></script>
     <script src="/shared-forms.js" defer></script>
@@ -220,6 +222,7 @@
                 hidden
                 >Pages</a
               >
+              <a id="adminLeadershipLink" href="/dashboard-next?area=leadership" data-i18n="leadership_admin_title" hidden>Branch leadership</a>
               <a
                 id="adminTranslationsLink"
                 href="/dashboard-next?area=translations"
@@ -543,6 +546,13 @@
             <div data-pages-page hidden>
               <div class="pages-admin-shell"></div>
             </div>
+          </section>
+          <section id="adminLeadership" aria-labelledby="adminLeadershipTitle" hidden>
+            <header class="admin-area-heading"><div>
+              <h1 id="adminLeadershipTitle" data-i18n="leadership_admin_title" tabindex="-1">Branch leadership</h1>
+              <p data-i18n="leadership_admin_intro">Update leadership names and portraits.</p>
+            </div></header>
+            <div data-organization-editor></div>
           </section>
           <section
             id="adminTranslations"

@@ -1,5 +1,7 @@
 {
   "en": {
+    "leadership_admin_title": "Branch leadership",
+    "leadership_admin_intro": "Update leadership names and portraits.",
     "article_upload_document": "Upload PDF",
     "article_document_upload_help": "PDF only, up to 20 MiB. Uploaded files are public by link immediately, even while the article is a draft. Do not upload private documents.",
     "article_document_public_confirm": "This PDF will be publicly accessible immediately. Confirm that it is approved for public sharing. Saving or publishing the article is a separate step.",
@@ -2553,6 +2555,8 @@
     "audit_action_content_revert_conflicted": "Content revert blocked by a newer edit"
   },
   "fr": {
+    "leadership_admin_title": "Direction de la Branche",
+    "leadership_admin_intro": "Modifiez les noms et les portraits.",
     "article_upload_document": "Téléverser un PDF",
     "article_document_upload_help": "PDF seulement, jusqu’à 20 Mio. Les fichiers téléversés sont immédiatement accessibles au public par leur lien, même si l’article est un brouillon. Ne téléversez pas de documents privés.",
     "article_document_public_confirm": "Ce PDF sera immédiatement accessible au public. Confirmez que sa diffusion publique est autorisée. L’enregistrement ou la publication de l’article est une étape distincte.",

@@ -58,6 +58,94 @@ tags:
   - name: Certificates
   - name: Contact
 paths:
+  /api/organization-content/media:
+    get:
+      operationId: searchOrganizationImages
+      summary: Search existing images for authorized Branch leadership editors
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: cursor
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 120
+      responses:
+        '200':
+          description: Image thumbnail metadata and nextCursor
+        '401':
+          description: Authentication required
+        '403':
+          description: Branch leadership capability required
+  /api/organization-content/manage:
+    get:
+      operationId: listEditableOrganizationContent
+      summary: List the Branch leadership editor resource and permissions
+      responses:
+        '200':
+          description: Resources and current permission flags
+        '401':
+          description: Authentication required
+        '403':
+          description: Branch leadership capability required
+  /api/organization-content/manage/{key}:
+    parameters:
+      - in: path
+        name: key
+        required: true
+        schema:
+          type: string
+          enum: [leadership]
+    get:
+      operationId: getEditableOrganizationContent
+      summary: Read the bilingual Branch leadership roster and optimistic concurrency version
+      responses:
+        '200':
+          description: Content and version (zero for bundled content not yet edited)
+        '401':
+          description: Authentication required
+        '403':
+          description: Branch leadership capability required
+        '404':
+          description: Unknown resource
+    put:
+      operationId: updateOrganizationContent
+      summary: Save bilingual Branch leadership names and portraits with audit history
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content, version]
+              properties:
+                content:
+                  type: object
+                  description: Structured bilingual roster. Only names and tracked portrait image keys may change; bundled titles, appointments, biographies and layout are fixed.
+                version:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          description: Saved content and incremented version
+        '400':
+          description: Invalid content, layout, version or unrecognized portrait
+        '401':
+          description: Authentication required
+        '403':
+          description: Branch leadership capability required
+        '404':
+          description: Unknown resource
+        '409':
+          description: Another editor saved this page; reload before saving
   /api/history-heritage:
     get:
       operationId: listHistoryHeritage

@@ -249,6 +249,56 @@ test('month and editable year jump decades without changing the selected date un
   picker.destroy();
 });
 
+test('scrolling the year browses the calendar without committing the certificate date', async () => {
+  const page = setup();
+  const changes = [];
+  const { picker, trigger, popover } = page.create({
+    includeTime: false,
+    date: '2024-02-16',
+    onInput: ({ date }) => changes.push(date),
+  });
+  await page.click(trigger);
+  const year = popover.querySelector('.cmcen-date-time-year');
+  const yearToggle = popover.querySelector('.cmcen-date-time-year-toggle');
+  const month = popover.querySelector('.cmcen-date-time-month');
+  const wheel = async (element, values = {}) => {
+    let prevented = false;
+    await element.fire('wheel', {
+      deltaX: 0,
+      deltaY: 1,
+      preventDefault() {
+        prevented = true;
+      },
+      ...values,
+    });
+    return prevented;
+  };
+  assert.equal(await wheel(yearToggle, { ctrlKey: true }), false);
+  assert.equal(await wheel(yearToggle, { deltaX: 5 }), false);
+  assert.equal(yearToggle.textContent, '2024');
+  assert.equal(await wheel(yearToggle), true);
+  assert.equal(yearToggle.textContent, '2023');
+  assert.equal(month.value, '1');
+  assert.equal(popover.querySelectorAll('.cmcen-date-time-day').length, 28);
+  await page.click(yearToggle);
+  assert.equal(await wheel(year, { deltaY: -1 }), true);
+  assert.equal(year.value, '2024');
+  assert.equal(popover.querySelectorAll('.cmcen-date-time-day').length, 29);
+  await year.fire('keydown', { key: 'Escape', stopPropagation() {} });
+  assert.equal(yearToggle.textContent, '2023');
+  assert.equal(picker.getValue().date, '2024-02-16');
+  assert.deepEqual(changes, []);
+  month.value = '2';
+  await month.fire('change');
+  await page.click(
+    popover
+      .querySelectorAll('.cmcen-date-time-day')
+      .find((day) => day.textContent === '9'),
+  );
+  assert.deepEqual(changes, ['2023-03-09']);
+  picker.destroy();
+});
+
 test('time-capable consumers retain values, other picker opening and Escape dismiss, and destroy removes an open portal', async () => {
   const page = setup(),
     a = page.create({ date: '2026-08-01', time: '13:45' }),

@@ -7,6 +7,13 @@
   const account = document.getElementById("dashboardNextAccount");
   const retry = document.getElementById("dashboardNextRetry");
   const areas = {
+    leadership: {
+      permission: "canManageLeadership",
+      link: document.getElementById("adminLeadershipLink"),
+      element: document.getElementById("adminLeadership"),
+      title: "adminLeadershipTitle",
+      mount: (options) => window.OrganizationContentEditor.mountLeadership(options),
+    },
     users: {
       permission: "canReadUsers",
       link: document.getElementById("adminUsersLink"),
@@ -210,6 +217,7 @@
   }
   // Match administrative entry points, not role names or contribution rights.
   const adminPermissions = [
+    "canManageLeadership",
     "canVerifyArchive",
     "canReviewAndPublish",
     "canManageAdoptDisplays",

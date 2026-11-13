@@ -1,6 +1,8 @@
 const { ROLE_LEVELS } = require('./roles');
 
 const PERMISSION_CATALOG = Object.freeze([
+  { key: 'leadership.manage', label: 'Manage Branch leadership',
+    group: 'Leadership', action: 'edit', description: 'Update Branch leadership names and portraits independently of organization content areas.' },
   {
     key: 'backups.manage',
     label: 'Manage encrypted database backups',
@@ -280,6 +282,7 @@ const PERMISSION_CATALOG = Object.freeze([
 ]);
 
 const LEGACY_PERMISSION_KEYS = Object.freeze({
+  canManageLeadership: 'leadership.manage',
   canManageBackups: 'backups.manage',
   canManageAdoptDisplays: 'adopt_displays.manage',
   canVerifyArchive: 'archive.verify',
@@ -342,6 +345,7 @@ function getBuiltInPermissionFlags(user) {
   const isGhost = role === 'ghost';
 
   return {
+    canManageLeadership: hasMinimumRole(role, 'administrator'),
     canManageBackups: role === 'developer',
     canManageAdoptDisplays: false,
     canVerifyArchive: false,

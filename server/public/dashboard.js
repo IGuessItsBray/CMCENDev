@@ -1045,6 +1045,7 @@ function createDangerZone(user) {
 function canAccessAdministration(user) {
   // Match the administrative permission gate in dashboard-next.js.
   return [
+    "canManageLeadership",
     "canVerifyArchive",
     "canReviewAndPublish",
     "canManageAdoptDisplays",

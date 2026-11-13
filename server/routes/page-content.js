@@ -4,6 +4,8 @@ const path = require('node:path');
 const mongoose = require('mongoose');
 const { buildPublicMediaUrl } = require('../services/media-library');
 const catalogue = require('../services/document-catalogue');
+const OrganizationContent = require('../models/OrganizationContent');
+const { overlayLeadership } = require('../services/organization-content');
 
 const router = express.Router();
 
@@ -50,8 +52,15 @@ router.get('/page-content/document-library.json', async (_req, res) => {
   }
 });
 
-router.get('/page-content/:filename', (req, res) => {
+router.get('/page-content/:filename', async (req, res) => {
   if (!pages.has(req.params.filename)) return res.sendStatus(404);
+  if (req.params.filename === 'leadership.json') {
+    res.set('Cache-Control', 'no-cache');
+    if (mongoose.connection.readyState !== 1)
+      return res.json(resolveMedia(pages.get(req.params.filename)));
+    const record = await OrganizationContent.findOne({ key: 'leadership' }).lean();
+    return res.json(resolveMedia(overlayLeadership(structuredClone(pages.get(req.params.filename)), record?.content)));
+  }
   res.set('Cache-Control', 'no-cache');
   res.json(resolveMedia(pages.get(req.params.filename)));
 });

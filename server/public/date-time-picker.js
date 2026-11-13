@@ -359,6 +359,26 @@
         renderCalendar();
       }
     });
+    const scrollYear = (event) => {
+      if (
+        event.ctrlKey ||
+        !event.deltaY ||
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      const nextYear = Math.min(
+        Number(year.max),
+        Math.max(Number(year.min), visibleYear + (event.deltaY < 0 ? 1 : -1)),
+      );
+      if (nextYear === visibleYear) return;
+      visibleYear = nextYear;
+      year.value = String(visibleYear);
+      renderCalendar();
+    };
+    yearToggle.addEventListener("wheel", scrollYear, { passive: false });
+    year.addEventListener("wheel", scrollYear, { passive: false });
     year.addEventListener("blur", () => {
       // The grid already reflects input, so blur must not replace the day
       // under the pointer and swallow the user's next day click.

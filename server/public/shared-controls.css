@@ -845,9 +845,27 @@ html[data-theme='dark'] .cmcen-date-time-time-row {
   color: var(--navy-900);
   font: inherit;
 }
-.cmcen-date-time-header select {
+.cmcen-date-time-header .cmcen-date-time-month {
   flex: 1;
   width: 0;
+  padding-inline: 0.65rem 1.65rem;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 0.9rem center,
+    right calc(0.9rem - 5px) center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+@media (forced-colors: active) {
+  .cmcen-date-time-header .cmcen-date-time-month {
+    appearance: auto;
+    padding-inline: 0.65rem;
+    background-image: none;
+  }
 }
 .cmcen-date-time-header input,
 .cmcen-date-time-year-toggle {
@@ -857,7 +875,7 @@ html[data-theme='dark'] .cmcen-date-time-time-row {
 html[data-theme='dark'] .cmcen-date-time-header select,
 html[data-theme='dark'] .cmcen-date-time-header input,
 html[data-theme='dark'] .cmcen-date-time-year-toggle {
-  background: var(--surface, #162334);
+  background-color: var(--surface, #162334);
   color: var(--text, #f2f4f7);
 }
 .cmcen-date-time-year-toggle {

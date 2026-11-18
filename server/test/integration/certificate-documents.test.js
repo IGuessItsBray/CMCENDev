@@ -375,6 +375,43 @@ test('family/packet output supports repeated previews/downloads, audits choices 
   }
 });
 
+test('a packet uses the saved ceremony or release date unless this download has an override', async () => {
+  for (const [dwdDate, expected] of [
+    [new Date('2026-08-12T00:00:00.000Z'), '2026-08-12'],
+    [undefined, '2026-08-01'],
+  ]) {
+    const savedId = new mongoose.Types.ObjectId();
+    await CertificateRequest.collection.insertOne({
+      _id: savedId,
+      ...memberRequest(dwdDate ? { dwdDate } : {}),
+      status: 'pending',
+      familyMembers: [{
+        fullName: 'Synthetic family',
+        memberRelationshipToRecipient: 'partner',
+      }],
+    });
+    const before = await CertificateRequest.findById(savedId).lean();
+    const dates = [expected, '2026-08-20', expected];
+    const requests = [{}, { certificateDate: dates[1] }, {}];
+    for (const options of requests) {
+      const result = await request(app)
+        .post(`/api/certificate-requests/${savedId}/packet.pdf?download=1`)
+        .set('Authorization', `Bearer ${editorToken}`)
+        .send(options)
+        .expect(200);
+      const pdf = await require('pdf-lib').PDFDocument.load(result.body);
+      assert.equal(pdf.getPageCount(), 2);
+    }
+    const events = await AuditLog.find({
+      target: savedId,
+      action: 'content.certificate_request_packet_generated',
+    }).sort({ _id: 1 }).lean();
+    assert.deepEqual(events.map(({ metadata }) => metadata.certificateDate), dates);
+    assert.deepEqual(await CertificateRequest.findById(savedId).lean(), before);
+    await CertificateRequest.deleteOne({ _id: savedId });
+  }
+});
+
 test('missing family fonts fail safely and the configured route uses exact family fonts', async () => {
   const italic = process.env.CERTIFICATE_BELL_MT_ITALIC_PATH;
   process.env.CERTIFICATE_BELL_MT_ITALIC_PATH =

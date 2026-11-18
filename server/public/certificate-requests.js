@@ -120,7 +120,7 @@
           root: host,
           api,
           showRequestForm: false,
-          showSubmittedRequests: false,
+          showSubmittedRequests: true,
           onDenied() {
             controller.dispose();
             host.textContent = t("certificate_requests_access_denied");

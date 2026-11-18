@@ -108,7 +108,7 @@ test('management-only custom roles retain staff access without request forms', a
     ['staff'],
   );
   assert.equal(page.mounts[0].showRequestForm, false);
-  assert.equal(page.mounts[0].showSubmittedRequests, false);
+  assert.equal(page.mounts[0].showSubmittedRequests, true);
   assert.equal(page.calls.length, 1);
 });
 test('staff with submission permission see creation tools, not public request forms, in the staff workspace', async () => {

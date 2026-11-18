@@ -141,7 +141,7 @@ test('Trusted to Serve queue downloads the saved award after staff review withou
         : undefined,
   });
   await page.controller.ready;
-  assert.equal(page.download().textContent, 'trusted_request_download');
+  assert.equal(page.download().textContent, 'certificate_fulfillment_download');
   const labels = page.root
     .querySelectorAll('span')
     .map((element) => element.textContent);
@@ -196,56 +196,13 @@ test('Trusted to Serve review cancellation, duplicate clicks and disposal do not
   assert.equal(page.downloads.length, 0);
 });
 
-test('Trusted to Serve uses the existing single-recipient print and mail lifecycle', async () => {
-  const page = setup({
-    requests: [trustedRequest()],
-    checklist: async () => ['member'],
-  });
-  await page.controller.ready;
-  await page.action().fire('click');
-  assert.deepEqual(
-    Array.from(
-      page.calls.find((call) => call.method === 'PATCH').body
-        .printedCertificateKeys,
-    ),
-    ['member'],
-  );
-  await page.action().fire('click');
-  assert.equal(page.action(), null);
-  assert.equal(page.status(), 'certificate_requests_mail_success');
-});
-
-test('family controls default to the saved DWD ceremony date without changing member dates or status', async () => {
-  const item = request();
-  item.member.releaseDate = '2026-08-01T00:00:00.000Z';
-  item.member.dwdDate = '2026-09-12T00:00:00.000Z';
-  const page = setup({
-    requests: [item],
-    api: (url) =>
-      url.includes('/family/')
-        ? Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
-        : undefined,
-  });
-  await page.controller.ready;
-  assert.equal(
-    page.root.querySelector('.certificate-family-date').value,
-    '2026-09-12',
-  );
-  await page.root.querySelector('.certificate-family-download').fire('click');
-  assert.equal(page.calls.at(-1).body.certificateDate, '2026-09-12');
-  assert.equal(item.member.releaseDate, '2026-08-01T00:00:00.000Z');
-  assert.equal(item.status, 'pending');
-  assert.equal(
-    page.calls.some((call) => call.method === 'PATCH'),
-    false,
-  );
-  page.controller.dispose();
-});
 function setup({
   requests = [request()],
   api: override,
   confirm = async () => true,
-  checklist = async () => ['member', 'family:0'],
+  form = async (_, { fields }) => ({
+    certificateDate: fields[0].defaultValue || '2026-01-01',
+  }),
   permissions = {},
   requestForm,
   showRequestForm = true,
@@ -257,8 +214,7 @@ function setup({
     document = new Element('document');
   document.createElement = (tag) => new Element(tag);
   document.getElementById = () => root;
-  const calls = [],
-    checklists = [];
+  const calls = [];
   let denied = 0;
   const urls = [],
     revoked = [],
@@ -292,13 +248,7 @@ function setup({
         }).format(new Date(value)),
       formatTitleCaseValue: (value, fallback) => value || fallback,
     },
-    CMCENModal: {
-      confirm,
-      confirmChecklist: (message, options) => {
-        checklists.push(options);
-        return checklist();
-      },
-    },
+    CMCENModal: { confirm, form },
   };
   vm.runInNewContext(
     fs.readFileSync(
@@ -329,16 +279,30 @@ function setup({
       const result = override?.(url, options);
       if (result !== undefined) return result;
       if (options.method === 'PATCH') {
-        requests[0] = { ...requests[0], status: options.body.status };
-        return { certificateRequest: { status: options.body.status } };
+        const { field, checked, expectedRevision } = options.body;
+        const status =
+          field === 'printed'
+            ? checked
+              ? 'ready_to_mail'
+              : 'pending'
+            : checked
+              ? 'mailed'
+              : 'ready_to_mail';
+        const fulfillmentRevision = expectedRevision + 1;
+        requests[0] = { ...requests[0], status, fulfillmentRevision };
+        return {
+          certificateRequest: {
+            id: requests[0]._id,
+            status,
+            fulfillmentRevision,
+          },
+        };
       }
       return {
         familyWordingOptions: [
           { key: 'husband', en: "your husband's", fr: 'de votre mari' },
         ],
-        certificateRequests: requests.filter(
-          (record) => record.status !== 'mailed',
-        ),
+        certificateRequests: requests,
       };
     },
     onDenied: () => {
@@ -346,7 +310,10 @@ function setup({
       controller.dispose();
     },
   });
-  const action = () => root.querySelector('.certificate-request-print-button');
+  const toggle = (field = 'printed') =>
+    root
+      .querySelectorAll('input')
+      .find((input) => input.dataset.fulfillmentField === field) || null;
   const refresh = () =>
     root.querySelector('.certificate-requests-toolbar').querySelector('button');
   const status = () =>
@@ -357,8 +324,13 @@ function setup({
     document,
     controller,
     calls,
-    checklists,
-    action,
+    action: toggle,
+    toggle,
+    change(field, checked) {
+      const input = toggle(field);
+      input.checked = checked;
+      return input.fire('change');
+    },
     refresh,
     status,
     denied: () => denied,
@@ -366,7 +338,7 @@ function setup({
     revoked,
     downloads,
 
-    download: () => root.querySelector('.certificate-member-download'),
+    download: () => root.querySelector('.certificate-packet-download'),
   };
 }
 
@@ -415,91 +387,10 @@ test('staff request entry respects submit permission, refreshes the queue and is
   assert.equal(disposed, 2);
 });
 
-test('family and packet actions use saved answers immediately and isolate downloads per request', async () => {
-  const page = setup({
-    requests: [request(), { ...request(), _id: 'request/2' }],
-    api: (url) =>
-      /family\/|packet\.pdf/.test(url)
-        ? Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
-        : undefined,
-  });
-  await page.controller.ready;
-  assert.equal(page.root.querySelector('.certificate-family-wording'), null);
-  await page.document.fire('languagechange');
-  const date = page.root.querySelector('.certificate-family-date');
-  date.value = '2026-08-01';
-  await date.fire('change');
-  await page.root.querySelector('.certificate-family-download').fire('click');
-  assert.equal(page.calls.at(-1).method, 'POST');
-  assert.equal(page.calls.at(-1).body.wording, undefined);
-  assert.equal(page.calls.at(-1).body.certificateDate, '2026-08-01');
-  assert.match(
-    page.calls.at(-1).url,
-    /request%2F1\/family\/0\.pdf\?timeZone=America%2FToronto&download=1$/,
-  );
-  assert.equal(page.root.querySelector('iframe'), null);
-  const changed = page.root.querySelector('.certificate-family-date');
-  changed.value = '2026-08-02';
-  await changed.fire('change');
-  assert.equal(page.root.querySelector('iframe'), null);
-  assert.equal(page.revoked.length, 1);
-  await page.root.querySelector('.certificate-packet-download').fire('click');
-  assert.equal(page.calls.at(-1).body.familyWordings, undefined);
-  assert.match(
-    page.calls.at(-1).url,
-    /packet\.pdf\?timeZone=America%2FToronto&download=1$/,
-  );
-  assert.equal(
-    page.calls.some((call) => call.method === 'PATCH'),
-    false,
-  );
-});
-
-test('family duplicate clicks, denied requests and recoverable errors clean up correctly', async () => {
-  const pending = deferred();
-  let fail = true;
-  const page = setup({
-    api: (url) =>
-      url.includes('/family/')
-        ? fail
-          ? pending.promise
-          : Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
-        : undefined,
-  });
-  await page.controller.ready;
-  const active = page.root
-    .querySelector('.certificate-family-download')
-    .fire('click');
-  await page.root.querySelector('.certificate-family-download').fire('click');
-  await page.root.querySelector('.certificate-packet-download').fire('click');
-  assert.equal(page.calls.length, 2);
-  assert.equal(
-    page.root.querySelector('.certificate-family-date').disabled,
-    true,
-  );
-  pending.reject(
-    Object.assign(new Error('Needs review'), {
-      status: 422,
-      data: { json: async () => ({ code: 'certificate_wording_required' }) },
-    }),
-  );
-  await active;
-  assert.equal(page.status(), 'certificate_family_wording_required');
-  assert.equal(
-    page.root.querySelector('.certificate-family-date').disabled,
-    false,
-  );
-  fail = false;
-  await page.root.querySelector('.certificate-family-download').fire('click');
-  assert.equal(page.status(), 'certificate_document_generated');
-  page.controller.dispose();
-  assert.deepEqual(page.revoked, page.urls);
-});
-
-test('member download uses authenticated binary API, guards repeated clicks and never advances fulfillment', async () => {
+test('packet download uses authenticated binary API, guards repeated clicks and never advances fulfillment', async () => {
   const pending = deferred();
   const page = setup({
-    api: (url) => (url.includes('member.pdf') ? pending.promise : undefined),
+    api: (url) => (url.includes('packet.pdf') ? pending.promise : undefined),
   });
   await page.controller.ready;
   const first = page.download().fire('click');
@@ -509,7 +400,7 @@ test('member download uses authenticated binary API, guards repeated clicks and 
   assert.equal(page.calls.length, 2);
   assert.equal(
     page.calls[1].url,
-    '/api/certificate-requests/request%2F1/member.pdf?timeZone=America%2FToronto&download=1',
+    '/api/certificate-requests/request%2F1/packet.pdf?timeZone=America%2FToronto&download=1',
   );
   assert.equal(page.calls[1].parseJson, false);
   assert.equal(page.download().disabled, true);
@@ -521,14 +412,13 @@ test('member download uses authenticated binary API, guards repeated clicks and 
   await page.download().fire('click');
   assert.match(
     page.calls.at(-1).url,
-    /member\.pdf\?timeZone=America%2FToronto&download=1$/,
+    /packet\.pdf\?timeZone=America%2FToronto&download=1$/,
   );
   assert.equal(page.downloads.length, 2);
   assert.equal(
     page.calls.some((call) => call.method === 'PATCH'),
     false,
   );
-  assert.equal(page.checklists.length, 0);
   page.controller.dispose();
   assert.deepEqual(page.revoked.sort(), page.urls.sort());
 });
@@ -537,7 +427,7 @@ test('member generation errors recover and missing-font errors have an actionabl
   let failed = true;
   const page = setup({
     api: (url) => {
-      if (!url.includes('member.pdf')) return undefined;
+      if (!url.includes('packet.pdf')) return undefined;
       return failed
         ? Promise.reject(
             Object.assign(new Error('Missing fonts'), {
@@ -556,14 +446,14 @@ test('member generation errors recover and missing-font errors have an actionabl
   assert.equal(page.download().disabled, false);
   failed = false;
   await page.download().fire('click');
-  assert.equal(page.status(), 'certificate_member_generated');
+  assert.equal(page.status(), 'certificate_document_generated');
   assert.equal(page.root.querySelector('iframe'), null);
 });
 
 test('denied and disposed document requests cannot retain private downloads or late results', async () => {
   const denied = setup({
     api: (url) =>
-      url.includes('member.pdf')
+      url.includes('packet.pdf')
         ? Promise.reject(Object.assign(new Error('Denied'), { status: 403 }))
         : undefined,
   });
@@ -573,7 +463,7 @@ test('denied and disposed document requests cannot retain private downloads or l
   assert.equal(denied.root.children.length, 0);
   const pending = deferred();
   const page = setup({
-    api: (url) => (url.includes('member.pdf') ? pending.promise : undefined),
+    api: (url) => (url.includes('packet.pdf') ? pending.promise : undefined),
   });
   await page.controller.ready;
   const request = page.download().fire('click');
@@ -582,80 +472,6 @@ test('denied and disposed document requests cannot retain private downloads or l
   pending.resolve({ blob: async () => ({ type: 'application/pdf' }) });
   await request;
   assert.equal(page.urls.length, 0);
-  assert.equal(page.root.children.length, 0);
-});
-
-test('printing confirms every recipient, then mailing completes and removes the request', async () => {
-  const page = setup();
-  await page.controller.ready;
-  await page.action().fire('click');
-  const print = page.calls.find((call) => call.method === 'PATCH');
-  assert.equal(print.url, '/api/certificate-requests/request%2F1/status');
-  assert.equal(print.body.status, 'ready_to_mail');
-  assert.deepEqual(Array.from(print.body.printedCertificateKeys), [
-    'member',
-    'family:0',
-  ]);
-  assert.deepEqual(
-    Array.from(page.checklists[0].checklist, (item) => item.value),
-    ['member', 'family:0'],
-  );
-  assert.match(
-    page.checklists[0].checklist[1].label,
-    /certificate_member_relationship_husband/,
-  );
-  assert.equal(page.action().textContent, 'certificate_requests_mark_mailed');
-  await page.action().fire('click');
-  const mailed = page.calls.filter((call) => call.method === 'PATCH').at(-1);
-  assert.equal(mailed.body.status, 'mailed');
-  assert.equal(mailed.body.printedCertificateKeys, undefined);
-  assert.equal(page.action(), null);
-  assert.equal(page.status(), 'certificate_requests_mail_success');
-});
-
-test('partial, cancelled, or unexpected print checklist values cannot advance fulfillment', async () => {
-  for (const keys of [
-    null,
-    [],
-    ['member'],
-    ['member', 'family:1'],
-    ['member', 'family:0', 'unknown'],
-  ]) {
-    const page = setup({ checklist: async () => keys });
-    await page.controller.ready;
-    await page.action().fire('click');
-    assert.equal(page.calls.length, 1);
-    assert.equal(page.controller.canNavigate(), true);
-  }
-});
-
-test('legacy printed requests use mailing confirmation and cancelled mailing does not mutate', async () => {
-  const page = setup({
-    requests: [request('printed')],
-    confirm: async () => false,
-  });
-  await page.controller.ready;
-  assert.equal(page.action().textContent, 'certificate_requests_mark_mailed');
-  await page.action().fire('click');
-  assert.equal(page.calls.length, 1);
-  assert.equal(page.checklists.length, 0);
-});
-
-test('confirmation guards duplicate clicks and language changes preserve the busy state', async () => {
-  const pending = deferred();
-  const page = setup({ checklist: () => pending.promise });
-  await page.controller.ready;
-  const action = page.action().fire('click');
-  await page.action().fire('click');
-  await page.document.fire('languagechange');
-  assert.equal(page.checklists.length, 1);
-  assert.equal(page.action().disabled, true);
-  assert.equal(page.controller.canNavigate(), false);
-  assert.equal(page.controller.hasUnsavedChanges(), true);
-  page.controller.dispose();
-  pending.resolve(['member', 'family:0']);
-  await action;
-  assert.equal(page.calls.length, 1);
   assert.equal(page.root.children.length, 0);
 });
 
@@ -688,9 +504,9 @@ test('a status conflict reconciles the queue before allowing the next action', a
     },
   });
   await page.controller.ready;
-  await page.action().fire('click');
-  assert.equal(page.action().textContent, 'certificate_requests_mark_mailed');
-  assert.equal(page.status(), 'certificate_requests_print_error');
+  await page.change('printed', true);
+  assert.equal(page.toggle('printed').checked, true);
+  assert.equal(page.status(), 'certificate_fulfillment_stale');
 });
 
 test('failed reconciliation clears stale actions until a successful retry', async () => {
@@ -705,11 +521,11 @@ test('failed reconciliation clears stale actions until a successful retry', asyn
     },
   });
   await page.controller.ready;
-  await page.action().fire('click');
+  await page.change('printed', true);
   assert.equal(page.action(), null);
   assert.equal(page.status(), 'certificate_requests_load_error');
   await page.refresh().fire('click');
-  assert.equal(page.action().textContent, 'certificate_requests_mark_mailed');
+  assert.equal(page.toggle('printed').checked, true);
 });
 
 test('read and write permission denials dispose the private worklist', async () => {
@@ -723,7 +539,7 @@ test('read and write permission denials dispose the private worklist', async () 
       },
     });
     await page.controller.ready;
-    if (write) await page.action().fire('click');
+    if (write) await page.change('printed', true);
     assert.equal(page.denied(), 1);
     assert.equal(page.root.children.length, 0);
   }
@@ -735,7 +551,7 @@ test('disposal aborts an active status request and ignores its late response', a
     api: (url, options) => (options.method ? pending.promise : undefined),
   });
   await page.controller.ready;
-  const action = page.action().fire('click');
+  const action = page.change('printed', true);
   await flush();
   assert.equal(page.controller.canNavigate(), false);
   const call = page.calls.find((entry) => entry.method);
@@ -757,4 +573,196 @@ test('certificate calendar dates remain on the requested day across time zones',
       .querySelectorAll('strong')
       .some((element) => element.textContent === 'Oct 20, 2026'),
   );
+});
+
+test('completed requests remain visible with one download and the complete packet count', async () => {
+  const page = setup({
+    requests: [
+      { ...request('mailed'), certificateCount: 3 },
+      { ...trustedRequest(), _id: 'request/2' },
+    ],
+  });
+  await page.controller.ready;
+  assert.equal(page.calls[0].url, '/api/certificate-requests?status=all');
+  assert.equal(
+    page.root.querySelectorAll('.certificate-request-card').length,
+    2,
+  );
+  assert.equal(
+    page.root.querySelectorAll('.certificate-packet-download').length,
+    2,
+  );
+  assert.equal(page.root.querySelector('.certificate-family-download'), null);
+  const counts = page.root
+    .querySelectorAll('.certificate-fulfillment-count')
+    .map((item) => item.textContent);
+  assert.ok(counts[0].includes('"count":3'));
+  assert.ok(counts[1].includes('"count":1'));
+  assert.equal(page.toggle('printed').checked, true);
+  assert.equal(page.toggle('printed').disabled, true);
+  assert.equal(page.toggle('mailed').checked, true);
+  page.controller.dispose();
+});
+
+test('confirmation saves both forward and reverse actions without removing the row', async () => {
+  const page = setup();
+  await page.controller.ready;
+  assert.equal(page.toggle('mailed').disabled, true);
+  await page.change('printed', true);
+  assert.equal(page.toggle('printed').checked, true);
+  assert.equal(page.toggle('mailed').disabled, false);
+  await page.change('mailed', true);
+  assert.equal(page.toggle('printed').disabled, true);
+  assert.equal(page.toggle('mailed').checked, true);
+  await page.change('mailed', false);
+  assert.equal(page.toggle('printed').checked, true);
+  assert.equal(page.toggle('mailed').checked, false);
+  await page.change('printed', false);
+  assert.equal(page.toggle('printed').checked, false);
+  assert.equal(page.toggle('mailed').disabled, true);
+  const writes = page.calls.filter((call) => call.method === 'PATCH');
+  assert.ok(
+    writes.every(
+      (call) =>
+        call.url === '/api/certificate-requests/request%2F1/fulfillment',
+    ),
+  );
+  assert.deepEqual(
+    writes.map((call) => Object.values(call.body)),
+    [
+      ['printed', true, 'pending', 0],
+      ['mailed', true, 'ready_to_mail', 1],
+      ['mailed', false, 'mailed', 2],
+      ['printed', false, 'ready_to_mail', 3],
+    ],
+  );
+  page.controller.dispose();
+});
+
+test('cancelled checks and unchecks immediately restore the prior value without a write', async () => {
+  for (const [status, field, checked] of [
+    ['pending', 'printed', true],
+    ['printed', 'mailed', true],
+    ['printed', 'printed', false],
+    ['mailed', 'mailed', false],
+  ]) {
+    const pending = deferred();
+    let confirmations = 0;
+    const page = setup({
+      requests: [request(status)],
+      confirm: () => {
+        confirmations++;
+        return pending.promise;
+      },
+    });
+    await page.controller.ready;
+    const change = page.change(field, checked);
+    assert.equal(page.toggle(field).checked, !checked);
+    await page.change(field, checked);
+    await page.document.fire('languagechange');
+    assert.equal(confirmations, 1);
+    assert.equal(page.toggle(field).disabled, true);
+    pending.resolve(false);
+    await change;
+    assert.equal(page.toggle(field).checked, !checked);
+    assert.equal(page.calls.length, 1);
+    page.controller.dispose();
+  }
+});
+
+test('the regular retirement packet downloads without a prompt or date override', async () => {
+  const page = setup({
+    confirm: async () => assert.fail('regular download opened a confirmation'),
+    form: async () => assert.fail('regular download opened a date prompt'),
+    api: (url) =>
+      url.includes('packet.pdf')
+        ? Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
+        : undefined,
+  });
+  await page.controller.ready;
+  await page.download().fire('click');
+  const call = page.calls.at(-1);
+  assert.match(call.url, /packet\.pdf/);
+  assert.equal(call.method, 'POST');
+  assert.deepEqual(Object.keys(call.body), []);
+  assert.equal(page.downloads.length, 1);
+  assert.equal(page.toggle('printed').checked, false);
+  page.controller.dispose();
+});
+
+test('the separate family date correction affects only its PDF, can be cancelled, and keeps saved wording', async () => {
+  const item = request();
+  item.member.releaseDate = '2026-08-01T00:00:00.000Z';
+  item.member.dwdDate = '2026-09-12T00:00:00.000Z';
+  let cancelled = true;
+  let prompts = 0;
+  const page = setup({
+    requests: [item],
+    form: async (message, options) => {
+      prompts++;
+      assert.match(message, /Sample family: your husband's/);
+      assert.equal(options.fields[0].defaultValue, '2026-09-12');
+      return cancelled ? null : { certificateDate: '2026-09-17' };
+    },
+    api: (url) =>
+      url.includes('packet.pdf')
+        ? Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
+        : undefined,
+  });
+  await page.controller.ready;
+  const correction = page.root.querySelector(
+    '.certificate-fulfillment-correct-date',
+  );
+  assert.equal(correction.parent.tagName, 'DETAILS');
+  await correction.fire('click');
+  assert.equal(page.calls.length, 1);
+  cancelled = false;
+  await correction.fire('click');
+  assert.equal(page.calls.at(-1).method, 'POST');
+  assert.equal(page.calls.at(-1).body.certificateDate, '2026-09-17');
+  assert.equal(item.member.dwdDate, '2026-09-12T00:00:00.000Z');
+  assert.equal(item.status, 'pending');
+  await page.download().fire('click');
+  assert.deepEqual(Object.keys(page.calls.at(-1).body), []);
+  assert.equal(page.downloads.length, 2);
+  assert.equal(prompts, 2);
+  assert.equal(
+    page.calls.some((call) => call.method === 'PATCH'),
+    false,
+  );
+  page.controller.dispose();
+});
+
+test('invalid saved dates still report server validation errors when downloading directly', async () => {
+  const page = setup({
+    api: (url) =>
+      url.includes('packet.pdf')
+        ? Promise.reject(
+            Object.assign(new Error('Invalid date'), {
+              status: 422,
+              data: {
+                json: async () => ({ code: 'certificate_data_invalid' }),
+              },
+            }),
+          )
+        : undefined,
+  });
+  await page.controller.ready;
+  await page.download().fire('click');
+  assert.equal(page.status(), 'certificate_member_data_invalid');
+  assert.equal(page.downloads.length, 0);
+  assert.equal(page.toggle('printed').checked, false);
+  page.controller.dispose();
+});
+
+test('missing saved family wording blocks generation without changing status', async () => {
+  const item = request();
+  item.familyMembers[0].memberRelationshipToRecipient = 'unspecified';
+  const page = setup({ requests: [item] });
+  await page.controller.ready;
+  await page.download().fire('click');
+  assert.equal(page.status(), 'certificate_family_wording_required');
+  assert.equal(page.calls.length, 1);
+  assert.equal(page.download().disabled, false);
+  page.controller.dispose();
 });

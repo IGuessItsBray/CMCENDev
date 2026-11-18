@@ -1608,7 +1608,7 @@ test('Certificates mounts only with fulfillment permission, persists across sect
   });
   await flush();
   assert.equal(page.certificatesMounted(), 1);
-  assert.equal(page.certificatesArea().showSubmittedRequests, false);
+  assert.equal(page.certificatesArea().showSubmittedRequests, true);
   assert.equal(page.certificatesArea().showRequestForm, false);
   page.window.location.href = 'http://localhost/dashboard-next?area=users';
   await page.events.popstate();

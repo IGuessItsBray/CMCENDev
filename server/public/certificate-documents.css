@@ -303,3 +303,66 @@ html[data-theme='dark'] .trusted-award-panel select {
   color: var(--dark-text);
   border-color: var(--dark-border);
 }
+.certificate-fulfillment-card {
+  min-width: 0;
+}
+.certificate-fulfillment-row {
+  display: grid;
+  grid-template-columns:
+    minmax(9rem, 1.4fr) minmax(6rem, 0.8fr) repeat(2, minmax(6rem, 1fr))
+    minmax(7rem, auto);
+  gap: 0.65rem 1rem;
+  align-items: center;
+  padding: 0.8rem 1rem;
+}
+.certificate-fulfillment-row > div > :is(strong, span) {
+  display: block;
+}
+.certificate-fulfillment-row :is(span, strong) {
+  overflow-wrap: anywhere;
+}
+.certificate-fulfillment-check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+}
+.certificate-fulfillment-check input {
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  flex-shrink: 0;
+}
+.certificate-fulfillment-reason {
+  display: block;
+  color: var(--admin-muted, var(--muted-text-color));
+  font-size: 0.8rem;
+}
+.certificate-fulfillment-details > summary {
+  width: fit-content;
+  margin: 0 1rem 0.75rem;
+  cursor: pointer;
+}
+.certificate-fulfillment-details > .certificate-fulfillment-correct-date {
+  margin: 0 1rem 0.75rem;
+  max-width: calc(100% - 2rem);
+  min-height: 2.75rem;
+}
+.certificate-fulfillment-row button {
+  width: 100%;
+  min-height: 2.75rem;
+}
+.certificate-requests-toolbar p[data-tone='error'] {
+  font-weight: 700;
+  color: #85201b;
+}
+html[data-theme='dark'] .certificate-requests-toolbar p[data-tone='error'] {
+  color: #ffd3cf;
+}
+@media (max-width: 960px) {
+  .certificate-fulfillment-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .certificate-fulfillment-row button {
+    grid-column: 1 / -1;
+  }
+}

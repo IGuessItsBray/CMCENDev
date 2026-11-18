@@ -298,6 +298,46 @@ const certificateRequestSchema = new mongoose.Schema(
       default: null,
     },
 
+    fulfillmentRevision: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
+    fulfillmentHistory: {
+      type: [
+        new mongoose.Schema(
+          {
+            field: {
+              type: String,
+              enum: ['printed', 'mailed'],
+              required: true,
+            },
+            checked: { type: Boolean, required: true },
+            previousStatus: {
+              type: String,
+              enum: CERTIFICATE_REQUEST_STATUSES,
+              required: true,
+            },
+            status: {
+              type: String,
+              enum: CERTIFICATE_REQUEST_STATUSES,
+              required: true,
+            },
+            actor: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: 'User',
+              required: true,
+            },
+            at: { type: Date, required: true },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+      select: false,
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

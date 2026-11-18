@@ -824,6 +824,14 @@ was mailed. Both transitions record the acting user, timestamp, and audit entry.
 | `GET`   | `/api/certificate-requests/count`                        | Authenticated + `canManageCertificateRequests` | Return `pending`, `readyToMail`, and total actionable request counts for the dashboard.                                                                                             |
 | `GET`   | `/api/certificate-requests`                              | Authenticated + `canManageCertificateRequests` | List actionable requests by default. Query: `status=pending\|ready_to_mail\|mailed\|printed\|actionable\|all`.                                                                      |
 | `PATCH` | `/api/certificate-requests/:certificateRequestId/status` | Authenticated + `canManageCertificateRequests` | Confirm printing with every certificate key: `{ "status": "ready_to_mail", "printedCertificateKeys": ["member", "family:0"] }`; then confirm mailing with `{ "status": "mailed" }`. |
+| `PATCH` | `/api/certificate-requests/:certificateRequestId/fulfillment` | Authenticated + `canManageCertificateRequests` | Confirm or reverse one step with `{ "field": "printed", "checked": true, "expectedStatus": "pending", "expectedRevision": 0 }`; `field` can also be `mailed`. |
+
+The list returns `certificateCount` (member plus family certificates for retirement,
+one for Trusted to Serve) and `fulfillmentRevision`. Use both the current status
+and revision when saving the confirmed checkbox. Stale or out-of-order changes
+return `409`. Clear mailing before clearing printing. Each actual transition
+records the staff actor and time in request history and the staff audit log.
+Downloading a certificate or packet does not change either fulfillment checkbox.
 
 ## Events
 

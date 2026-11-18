@@ -20,8 +20,6 @@
       loadFailed = false,
       messageKey = "";
     const documentUrls = new Set();
-    const familyReviews = new Map();
-    const datePickers = new Set();
     let familyWordingOptions = [];
     const toolbar = document.createElement("div");
     toolbar.className = "certificate-requests-toolbar";
@@ -42,7 +40,7 @@
     const awardRoot = document.createElement("section");
     const manualRoot = document.createElement("section");
     const requestRoot = document.createElement("section");
-    root.replaceChildren(requestRoot, toolbar, manualRoot, awardRoot, list);
+    root.replaceChildren(requestRoot, toolbar, list, manualRoot, awardRoot);
     const requestController =
       showRequestForm && permissions.canSubmitCertificateRequests === true
         ? window.TrustedToServeRequest?.mount({
@@ -162,190 +160,162 @@
       return list;
     }
 
-    function getCertificateRequestStatusKey(status) {
-      if (status === "mailed") {
-        return "certificate_request_mailed";
-      }
-
-      if (status === "ready_to_mail" || status === "printed") {
-        return "certificate_request_ready_to_mail";
-      }
-
-      return "certificate_request_pending";
+    function requestName(request) {
+      return (
+        request.member?.fullName ||
+        [request.trustedToServe?.firstName, request.trustedToServe?.lastName]
+          .filter(Boolean)
+          .join(" ") ||
+        translate("certificate_request_untitled")
+      );
     }
-
-    function getCertificatePrintItems(certificateRequest) {
-      const member = certificateRequest.member || {};
-      const familyMembers = Array.isArray(certificateRequest.familyMembers)
-        ? certificateRequest.familyMembers
-        : [];
-
-      return [
-        {
-          value: "member",
-          label: translate("certificate_requests_member_certificate", {
-            name: member.fullName || translate("certificate_request_untitled"),
+    function certificateCount(request) {
+      return Number.isInteger(request.certificateCount) &&
+        request.certificateCount > 0
+        ? request.certificateCount
+        : 1 +
+            (request.certificateType === "retirement"
+              ? request.familyMembers?.length || 0
+              : 0);
+    }
+    function fulfillmentChecked(request, field) {
+      return field === "mailed"
+        ? request.status === "mailed"
+        : ["ready_to_mail", "printed", "mailed"].includes(request.status);
+    }
+    function createFulfillmentCheckbox(request, field) {
+      const label = document.createElement("label");
+      label.className = "certificate-fulfillment-check";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = fulfillmentChecked(request, field);
+      const description = document.createElement("span");
+      description.textContent = translate(`certificate_fulfillment_${field}`);
+      input.setAttribute(
+        "aria-label",
+        `${description.textContent}: ${requestName(request)}`,
+      );
+      input.dataset.fulfillmentField = field;
+      input.dataset.requestId = request._id;
+      input.dataset.unavailable = String(
+        field === "printed"
+          ? request.status === "mailed"
+          : !fulfillmentChecked(request, "printed"),
+      );
+      const unavailableKey =
+        field === "printed"
+          ? "certificate_fulfillment_unmail_first"
+          : "certificate_fulfillment_print_first";
+      if (input.dataset.unavailable === "true") {
+        const reason = document.createElement("span");
+        reason.className = "certificate-fulfillment-reason";
+        reason.id = `certificate-fulfillment-${field}-${request._id}`;
+        reason.textContent = translate(unavailableKey);
+        input.setAttribute("aria-describedby", reason.id);
+        description.append(reason);
+      }
+      input.addEventListener("change", () => {
+        const checked = input.checked;
+        input.checked = fulfillmentChecked(request, field);
+        if (input.dataset.unavailable !== "true") {
+          return changeFulfillment(request, field, checked);
+        }
+      });
+      label.append(input, description);
+      return label;
+    }
+    function focusToggle(request, field) {
+      const controls = Array.from(list.querySelectorAll("input")).filter(
+        (input) => input.dataset.requestId === request._id && !input.disabled,
+      );
+      (
+        controls.find((input) => input.dataset.fulfillmentField === field) ||
+        controls[0] ||
+        refresh
+      ).focus();
+    }
+    async function changeFulfillment(request, field, checked) {
+      if (
+        disposed ||
+        busy ||
+        confirming ||
+        loading ||
+        loadFailed ||
+        !requests.includes(request) ||
+        checked === fulfillmentChecked(request, field)
+      )
+        return;
+      const direction = checked ? "set" : "clear";
+      const key = `certificate_fulfillment_${direction}_${field}`;
+      confirming = true;
+      update();
+      let accepted;
+      try {
+        accepted = await CMCENModal.confirm(
+          translate(`${key}_confirm`, {
+            name: requestName(request),
+            count: certificateCount(request),
           }),
-        },
-        ...familyMembers.map((familyMember, index) => {
-          const relationship = familyRelationshipLabel(
-            familyMember,
-            member.fullName,
-          );
-
-          return {
-            value: `family:${index}`,
-            label: translate("certificate_requests_family_certificate", {
-              name: familyMember.fullName || "—",
-              relationship,
-            }),
-          };
-        }),
-      ];
-    }
-
-    function createCertificateRequestAction(request) {
-      const action = document.createElement("button");
-      action.type = "button";
-      action.className = "certificate-request-print-button";
-      const readyToMail = ["ready_to_mail", "printed"].includes(request.status);
-      action.textContent = translate(
-        readyToMail
-          ? "certificate_requests_mark_mailed"
-          : "certificate_requests_mark_printed",
-      );
-      action.disabled = !readyToMail && request.status !== "pending";
-      action.dataset.actionable = String(
-        readyToMail || request.status === "pending",
-      );
-      action.addEventListener("click", () => advance(request));
-      return action;
-    }
-    function createMemberDocumentAction(request) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "certificate-member-download";
-      button.textContent = translate(
-        request.certificateType === "trusted_to_serve"
-          ? "trusted_request_download"
-          : "certificate_member_download",
-      );
-      button.dataset.actionable = String(
-        ["retirement", "trusted_to_serve"].includes(request.certificateType),
-      );
-      button.addEventListener("click", () => memberDocument(request));
-      return button;
-    }
-    function familyReview(request) {
-      const signature = JSON.stringify([
-        request.member?.fullName,
-        request.member?.releaseDate,
-        request.member?.dwdDate,
-        request.familyMembers,
-      ]);
-      let review = familyReviews.get(request._id);
-      if (!review || review.signature !== signature) {
-        review = {
-          signature,
-          certificateDate: String(
-            request.member?.dwdDate ?? request.member?.releaseDate ?? "",
-          ).slice(0, 10),
-        };
-        familyReviews.set(request._id, review);
-      }
-      return review;
-    }
-    function familyDocumentAction(request, index) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className =
-        index === undefined
-          ? "certificate-packet-download"
-          : "certificate-family-download";
-      button.textContent = translate(
-        index === undefined
-          ? "certificate_packet_download"
-          : "certificate_family_download",
-      );
-      button.dataset.actionable = String(
-        request.certificateType === "retirement",
-      );
-      button.addEventListener("click", () =>
-        memberDocument(
-          request,
-          index === undefined ? "packet" : "family",
-          index,
-        ),
-      );
-      return button;
-    }
-    function createFamilyDocumentControls(request) {
-      const container = document.createElement("fieldset");
-      container.className = "certificate-family-documents";
-      const legend = document.createElement("legend");
-      legend.textContent = translate("certificate_family_documents");
-      const hint = document.createElement("p");
-      hint.textContent = translate("certificate_family_wording_hint");
-      container.append(legend, hint);
-      const review = familyReview(request);
-      const dateLabel = document.createElement("label");
-      dateLabel.textContent = translate("certificate_family_date");
-      const date = document.createElement("input");
-      date.type = "date";
-      date.className = "certificate-family-date";
-      date.value = review.certificateDate;
-      date.addEventListener("change", () => {
-        review.certificateDate = date.value;
-        render();
-      });
-      if (window.CMCENDateTimePicker?.create) {
-        const picker = window.CMCENDateTimePicker.create({
-          name: `certificateDate-${request._id}`,
-          date: review.certificateDate,
-          includeTime: false,
-          label: translate("certificate_family_date"),
-          clearLabel: translate("timers_picker_clear"),
-          doneLabel: translate("timers_picker_done"),
-          onInput: ({ date: value }) => {
-            review.certificateDate = value;
-            render();
-          },
-        });
-        picker.querySelectorAll("button").forEach((button) => {
-          button.dataset.actionable = "true";
-        });
-        datePickers.add(picker);
-        dateLabel.append(picker);
-      } else dateLabel.append(date);
-      container.append(dateLabel);
-      (request.familyMembers || []).forEach((family, index) => {
-        const row = document.createElement("div");
-        row.className = "certificate-family-document-row";
-        const recipient = document.createElement("strong");
-        recipient.textContent = `${family.fullName || "—"} — ${familyRelationshipLabel(family, request.member?.fullName)}`;
-        const label = document.createElement("p");
-        label.className = "certificate-family-saved-wording";
-        const language = getCertificateRequestsLocale().startsWith("fr")
-          ? "fr"
-          : "en";
-        const variant = familyWordingOptions.find(
-          (item) => item.key === family.memberRelationshipToRecipient,
+          { title: translate(key), confirmText: translate(key) },
         );
-        label.textContent = variant
-          ? translate("certificate_family_saved_wording", {
-              wording: variant[language],
-            })
-          : translate("certificate_family_wording_required");
-        row.append(recipient, label, familyDocumentAction(request, index));
-        container.append(row);
-      });
-      const actions = document.createElement("div");
-      actions.className = "certificate-document-actions";
-      actions.append(familyDocumentAction(request));
-      container.append(actions);
-      return container;
+      } finally {
+        confirming = false;
+        if (!disposed) update();
+      }
+      if (disposed) return;
+      if (!accepted) {
+        focusToggle(request, field);
+        return;
+      }
+      busy = true;
+      messageKey = "certificate_fulfillment_saving";
+      update();
+      try {
+        const result = await api(
+          `/api/certificate-requests/${encodeURIComponent(request._id)}/fulfillment`,
+          {
+            method: "PATCH",
+            body: {
+              field,
+              checked,
+              expectedStatus: request.status,
+              expectedRevision: request.fulfillmentRevision ?? 0,
+            },
+            signal: lifecycle.signal,
+          },
+        );
+        if (disposed) return;
+        const saved = result?.certificateRequest;
+        if (
+          saved?.id !== request._id ||
+          !["pending", "ready_to_mail", "printed", "mailed"].includes(
+            saved?.status,
+          ) ||
+          !Number.isInteger(saved?.fulfillmentRevision)
+        )
+          throw new Error("Invalid certificate fulfillment response");
+        Object.assign(request, saved);
+        messageKey = "certificate_fulfillment_saved";
+      } catch (error) {
+        if (disposed) return;
+        if (error.status === 403 || error.status === 401) {
+          onDenied();
+          return;
+        }
+        messageKey =
+          error.status === 409
+            ? "certificate_fulfillment_stale"
+            : "certificate_fulfillment_save_error";
+        await load();
+      } finally {
+        if (!disposed) {
+          busy = false;
+          render();
+          focusToggle(request, field);
+        }
+      }
     }
-    async function memberDocument(request, kind = "member", familyIndex) {
+    async function memberDocument(request, correctFamilyDate = false) {
       if (
         disposed ||
         busy ||
@@ -357,44 +327,91 @@
       )
         return;
       const trusted = request.certificateType === "trusted_to_serve";
-      if (trusted) {
-        if (kind !== "member") return;
-        confirming = true;
-        update();
-        let reviewed;
-        try {
-          reviewed = await CMCENModal.confirm(
-            translate("trusted_request_review_confirm", {
-              name: request.member?.fullName || "—",
-            }),
-            { title: translate("trusted_request_download") },
-          );
-        } finally {
-          confirming = false;
-          if (!disposed) update();
-        }
-        if (!reviewed || disposed) return;
-      }
-      const review = trusted ? null : familyReview(request);
+      const family = !trusted && request.familyMembers?.length > 0;
+      const kind = trusted ? "member" : "packet";
+      let certificateDate;
+      if (correctFamilyDate && !family) return;
       if (
-        kind !== "member" &&
-        (kind === "family"
-          ? !familyWordingOptions.some(
-              (item) =>
-                item.key ===
-                request.familyMembers[familyIndex]
-                  ?.memberRelationshipToRecipient,
-            )
-          : request.familyMembers.some(
-              (family) =>
-                !familyWordingOptions.some(
-                  (item) => item.key === family.memberRelationshipToRecipient,
-                ),
-            ))
+        family &&
+        request.familyMembers.some(
+          (recipient) =>
+            !familyWordingOptions.some(
+              (item) => item.key === recipient.memberRelationshipToRecipient,
+            ),
+        )
       ) {
         messageKey = "certificate_family_wording_required";
         update();
         return;
+      }
+      if (trusted || correctFamilyDate) {
+        confirming = true;
+        update();
+        let reviewed;
+        try {
+          if (trusted) {
+            const award = request.trustedToServe || {};
+            reviewed = await CMCENModal.confirm(
+              translate("certificate_fulfillment_award_review", {
+                name: requestName(request),
+                rank: award.fullRankEn || "—",
+                role: translate(
+                  `trusted_award_role_${award.awardRole === "instructor" ? "instructor" : "student"}`,
+                ),
+                wording: ["elle", "il"].includes(award.frPronoun)
+                  ? translate(`trusted_award_${award.frPronoun}`)
+                  : "—",
+                date: formatCertificateRequestDate(award.presentationDate),
+              }),
+              {
+                title: translate("certificate_fulfillment_download"),
+                confirmText: translate("certificate_fulfillment_download"),
+              },
+            );
+          } else {
+            const language = getCertificateRequestsLocale().startsWith("fr")
+              ? "fr"
+              : "en";
+            const wording = request.familyMembers
+              .map((recipient) => {
+                const variant = familyWordingOptions.find(
+                  (item) =>
+                    item.key === recipient.memberRelationshipToRecipient,
+                );
+                return `${recipient.fullName}: ${variant[language]}`;
+              })
+              .join("; ");
+            reviewed = await CMCENModal.form(
+              translate("certificate_fulfillment_packet_date_correction", {
+                name: requestName(request),
+                wording,
+              }),
+              {
+                title: translate("certificate_fulfillment_correct_family_date"),
+                confirmText: translate("certificate_fulfillment_download"),
+                fields: [
+                  {
+                    name: "certificateDate",
+                    type: "date",
+                    required: true,
+                    label: translate("certificate_family_date"),
+                    defaultValue: String(
+                      request.member?.dwdDate ??
+                        request.member?.releaseDate ??
+                        "",
+                    ).slice(0, 10),
+                  },
+                ],
+              },
+            );
+            certificateDate = reviewed?.certificateDate;
+          }
+        } finally {
+          confirming = false;
+          if (!disposed) update();
+        }
+        if (!reviewed || disposed || (correctFamilyDate && !certificateDate))
+          return;
       }
       busy = true;
       messageKey =
@@ -403,26 +420,18 @@
           : "certificate_document_generating";
       update();
       try {
-        const suffix = trusted
-          ? "trusted-to-serve.pdf"
-          : kind === "family"
-            ? `family/${familyIndex}.pdf`
-            : `${kind}.pdf`;
+        const suffix = trusted ? "trusted-to-serve.pdf" : "packet.pdf";
         const response = await api(
           `/api/certificate-requests/${encodeURIComponent(request._id)}/${suffix}${window.CMCENUtils.getCertificatePdfQuery(true)}`,
           {
             parseJson: false,
             ...(trusted
               ? { method: "POST", json: true, body: { reviewed: true } }
-              : kind === "member"
-                ? {}
-                : {
-                    method: "POST",
-                    json: true,
-                    body: {
-                      certificateDate: review.certificateDate,
-                    },
-                  }),
+              : {
+                  method: "POST",
+                  json: true,
+                  body: correctFamilyDate ? { certificateDate } : {},
+                }),
             timeoutMs: null,
             signal: lifecycle.signal,
           },
@@ -438,7 +447,7 @@
           link.href = url;
           link.download = window.CMCENUtils.getPdfDownloadFilename(
             response,
-            `${trusted ? "trusted-to-serve" : `retirement-${kind}${kind === "family" ? `-${familyIndex}` : ""}`}-${request._id.replace(/[^a-f0-9]/gi, "")}.pdf`,
+            `${trusted ? "trusted-to-serve" : "retirement-packet"}-${request._id.replace(/[^a-f0-9]/gi, "")}.pdf`,
           );
           document.body.append(link);
           link.click();
@@ -475,7 +484,7 @@
       } finally {
         if (!disposed) {
           busy = false;
-          render();
+          update();
         }
       }
     }
@@ -489,6 +498,18 @@
             ? "certificate_requests_load_error"
             : messageKey || "admin_next_certificates_queue",
       );
+      status.dataset.tone =
+        loadFailed ||
+        [
+          "certificate_fulfillment_stale",
+          "certificate_fulfillment_save_error",
+          "certificate_member_fonts_unavailable",
+          "certificate_family_wording_required",
+          "certificate_member_data_invalid",
+          "certificate_member_document_error",
+        ].includes(messageKey)
+          ? "error"
+          : "";
       refresh.textContent = translate(
         loadFailed ? "admin_next_retry" : "admin_refresh",
       );
@@ -505,12 +526,15 @@
         ...list.querySelectorAll("input"),
         ...list.querySelectorAll("select"),
       ])
-        input.disabled = loading || busy || confirming || loadFailed;
+        input.disabled =
+          loading ||
+          busy ||
+          confirming ||
+          loadFailed ||
+          input.dataset.unavailable === "true";
     }
     function render() {
       if (disposed) return;
-      for (const picker of datePickers) picker.destroy();
-      datePickers.clear();
       list.replaceChildren();
       if (showSubmittedRequests && !loading && !loadFailed) {
         for (const request of requests)
@@ -530,14 +554,16 @@
       loadFailed = false;
       render();
       try {
-        const data = await api("/api/certificate-requests?status=actionable", {
-          signal: lifecycle.signal,
-        });
+        const data = await api(
+          `/api/certificate-requests?status=${showSubmittedRequests ? "all" : "actionable"}`,
+          {
+            signal: lifecycle.signal,
+          },
+        );
         if (disposed) return;
         if (!Array.isArray(data.certificateRequests))
           throw new Error("Invalid worklist");
         requests = data.certificateRequests;
-        for (const request of requests) familyReview(request);
         familyWordingOptions = Array.isArray(data.familyWordingOptions)
           ? data.familyWordingOptions
           : [];
@@ -545,9 +571,6 @@
           relationships: data.familyRelationshipOptions || [],
           wordings: familyWordingOptions,
         });
-        for (const id of familyReviews.keys())
-          if (!requests.some((request) => request._id === id))
-            familyReviews.delete(id);
       } catch (error) {
         if (disposed) return;
         requests = [];
@@ -563,136 +586,58 @@
         }
       }
     }
-    async function advance(request) {
-      if (
-        disposed ||
-        busy ||
-        confirming ||
-        loading ||
-        loadFailed ||
-        !requests.includes(request)
-      )
-        return;
-      const mailing = ["ready_to_mail", "printed"].includes(request.status);
-      if (!mailing && request.status !== "pending") return;
-      confirming = true;
-      update();
-      let body;
-      try {
-        const name =
-          request.member?.fullName || translate("certificate_request_untitled");
-        if (mailing) {
-          const confirmed = await CMCENModal.confirm(
-            translate("certificate_requests_mark_mailed_confirm", { name }),
-            {
-              title: translate("certificate_requests_mark_mailed"),
-              confirmText: translate("certificate_requests_mark_mailed"),
-            },
-          );
-          if (confirmed) body = { status: "mailed" };
-        } else {
-          const checklist = getCertificatePrintItems(request);
-          const printedCertificateKeys = await CMCENModal.confirmChecklist(
-            translate("certificate_requests_print_checklist_intro", { name }),
-            {
-              title: translate("certificate_requests_mark_printed"),
-              checklistLabel: translate(
-                "certificate_requests_print_checklist_label",
-              ),
-              checklist,
-              confirmText: translate("certificate_requests_confirm_printing"),
-            },
-          );
-          if (Array.isArray(printedCertificateKeys)) {
-            const keys = new Set(printedCertificateKeys);
-            if (
-              keys.size === checklist.length &&
-              checklist.every((item) => keys.has(item.value))
-            )
-              body = {
-                status: "ready_to_mail",
-                printedCertificateKeys: [...keys],
-              };
-            else messageKey = "admin_next_certificates_incomplete";
-          }
-        }
-      } finally {
-        confirming = false;
-        if (!disposed) update();
-      }
-      if (!body || disposed) return;
-      busy = true;
-      messageKey = "";
-      update();
-      try {
-        await api(
-          `/api/certificate-requests/${encodeURIComponent(request._id)}/status`,
-          { method: "PATCH", body, signal: lifecycle.signal },
-        );
-        if (disposed) return;
-        messageKey = mailing
-          ? "certificate_requests_mail_success"
-          : "certificate_requests_print_success";
-      } catch (error) {
-        if (disposed) return;
-        if (error.status === 403) {
-          onDenied();
-          return;
-        }
-        messageKey = mailing
-          ? "certificate_requests_mail_error"
-          : "certificate_requests_print_error";
-      } finally {
-        // Reconcile after success, conflicts, or uncertain failures before another action.
-        if (!disposed) {
-          await load();
-          busy = false;
-          update();
-        }
-      }
-    }
     function createCertificateRequestCard(certificateRequest) {
       const trusted = certificateRequest.certificateType === "trusted_to_serve";
       const member = certificateRequest.member || {};
       const mailingAddress = certificateRequest.mailingAddress || {};
       const requester = certificateRequest.requester || {};
       const card = document.createElement("article");
-      card.className = "certificate-request-card";
+      card.className = "certificate-request-card certificate-fulfillment-card";
 
       const header = document.createElement("header");
-      header.className = "certificate-request-card-header";
+      header.className = "certificate-fulfillment-row";
 
       const titleGroup = document.createElement("div");
-      const status = document.createElement("span");
-      status.className = "certificate-request-status";
-      if (["ready_to_mail", "printed"].includes(certificateRequest.status))
-        status.className += " is-ready-to-mail";
-      status.textContent = translate(
-        getCertificateRequestStatusKey(certificateRequest.status),
+      const title = document.createElement("strong");
+      title.textContent = requestName(certificateRequest);
+      const summary = document.createElement("span");
+      summary.textContent = getCertificateTypeLabel(
+        certificateRequest.certificateType,
+      );
+      titleGroup.append(title, summary);
+      const count = document.createElement("span");
+      const number = certificateCount(certificateRequest);
+      count.className = "certificate-fulfillment-count";
+      count.textContent = translate(
+        number === 1
+          ? "certificate_fulfillment_count_one"
+          : "certificate_fulfillment_count_many",
+        { count: number },
       );
 
-      const title = document.createElement("h2");
-      title.textContent =
-        member.fullName || translate("certificate_request_untitled");
-
-      const summary = document.createElement("p");
-      summary.textContent = `${getCertificateTypeLabel(certificateRequest.certificateType)} · ${translate("certificate_request_needed_by")} ${formatCertificateRequestDate(member.neededByDate)}`;
-      titleGroup.append(status, title, summary);
-
+      const download = document.createElement("button");
+      download.type = "button";
+      download.className = "certificate-packet-download";
+      download.textContent = translate("certificate_fulfillment_download");
+      download.setAttribute(
+        "aria-label",
+        `${download.textContent}: ${requestName(certificateRequest)}`,
+      );
+      download.dataset.actionable = String(
+        ["retirement", "trusted_to_serve"].includes(
+          certificateRequest.certificateType,
+        ),
+      );
+      download.addEventListener("click", () =>
+        memberDocument(certificateRequest),
+      );
       header.append(
         titleGroup,
-        createCertificateRequestAction(certificateRequest),
+        count,
+        createFulfillmentCheckbox(certificateRequest, "printed"),
+        createFulfillmentCheckbox(certificateRequest, "mailed"),
+        download,
       );
-      const documentActions = document.createElement("div");
-      documentActions.className = "certificate-member-actions";
-      documentActions.append(createMemberDocumentAction(certificateRequest));
-      const scope = document.createElement("p");
-      scope.textContent = translate("certificate_member_document_scope");
-      documentActions.append(scope);
-      if (!trusted && certificateRequest.familyMembers?.length)
-        documentActions.append(
-          createFamilyDocumentControls(certificateRequest),
-        );
       const requestDetails = document.createElement("div");
       requestDetails.className = "certificate-request-details-grid";
       requestDetails.append(
@@ -847,7 +792,36 @@
         ),
       );
 
-      card.append(header, documentActions, sections);
+      const details = document.createElement("details");
+      details.className = "certificate-fulfillment-details";
+      const detailsLabel = document.createElement("summary");
+      detailsLabel.textContent = translate("certificate_fulfillment_details");
+      detailsLabel.setAttribute(
+        "aria-label",
+        `${detailsLabel.textContent}: ${requestName(certificateRequest)}`,
+      );
+      details.append(detailsLabel, sections);
+      if (
+        certificateRequest.certificateType === "retirement" &&
+        certificateRequest.familyMembers?.length
+      ) {
+        const correct = document.createElement("button");
+        correct.type = "button";
+        correct.className = "certificate-fulfillment-correct-date";
+        correct.textContent = translate(
+          "certificate_fulfillment_correct_family_date",
+        );
+        correct.setAttribute(
+          "aria-label",
+          `${correct.textContent}: ${requestName(certificateRequest)}`,
+        );
+        correct.dataset.actionable = "true";
+        correct.addEventListener("click", () =>
+          memberDocument(certificateRequest, true),
+        );
+        details.append(correct);
+      }
+      card.append(header, details);
       return card;
     }
 
@@ -876,11 +850,8 @@
         requestController?.dispose();
         awardController?.dispose();
         manualController?.dispose();
-        for (const picker of datePickers) picker.destroy();
-        datePickers.clear();
         for (const url of documentUrls) URL.revokeObjectURL(url);
         documentUrls.clear();
-        familyReviews.clear();
         requests = [];
         root.replaceChildren();
       },

@@ -622,9 +622,20 @@
     }
 
     function formatAuditAction(action) {
-      const translationKey = auditActions.find(
-        (item) => item[0] === action,
-      )?.[1];
+      const certificateFulfillmentAction = {
+        "content.certificate_request_print_confirmed":
+          "audit_action_certificate_print_confirmed",
+        "content.certificate_request_print_reversed":
+          "audit_action_certificate_print_reversed",
+        "content.certificate_request_mailed":
+          "audit_action_certificate_mailed",
+        "content.certificate_request_mail_reversed":
+          "audit_action_certificate_mail_reversed",
+      };
+      const translationKey =
+        Object.hasOwn(certificateFulfillmentAction, action) ?
+          certificateFulfillmentAction[action] :
+          auditActions.find((item) => item[0] === action)?.[1];
       return translationKey
         ? translate(translationKey)
         : titleCaseAuditIdentifier(action);

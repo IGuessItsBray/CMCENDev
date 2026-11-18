@@ -666,3 +666,116 @@ test('full award name limits survive fulfillment; retirement requirements remain
   ])
     assert.ok(error.errors[`member.${field}`], field);
 });
+
+test('staff packet counts, atomic fulfillment and both reversals preserve durable history', async () => {
+  const retired = (await postRetirement(retirementPayload()).expect(201)).body
+    .certificateRequest.id;
+  const award = (await post(payload()).expect(201)).body.certificateRequest.id;
+  const staff = { Authorization: `Bearer ${tokens.editor}` };
+  const contributor = { Authorization: `Bearer ${tokens.contributor}` };
+  // A legacy row was persisted without the new revision/history fields.
+  await CertificateRequest.collection.updateOne(
+    { _id: new mongoose.Types.ObjectId(retired) },
+    { $unset: { fulfillmentRevision: '', fulfillmentHistory: '' } },
+  );
+  const list = () =>
+    request(app).get(`${base}?status=all`).set(staff).expect(200);
+  const rows = (await list()).body.certificateRequests;
+  assert.equal(rows.find(({ _id }) => _id === retired).certificateCount, 2);
+  assert.equal(rows.find(({ _id }) => _id === retired).fulfillmentRevision, 0);
+  assert.equal(rows.find(({ _id }) => _id === award).certificateCount, 1);
+
+  const toggle = (
+    field,
+    checked,
+    expectedStatus,
+    expectedRevision,
+    headers = staff,
+  ) =>
+    request(app)
+      .patch(`${base}/${retired}/fulfillment`)
+      .set(headers)
+      .send({ field, checked, expectedStatus, expectedRevision });
+  await toggle('printed', true, 'pending', 0, {}).expect(401);
+  await toggle('printed', true, 'pending', 0, contributor).expect(403);
+  await toggle('printed', 'true', 'pending', 0).expect(400);
+  await toggle('printed', true, 'pending', undefined).expect(400);
+  await toggle('mailed', true, 'pending', 0).expect(409);
+  const simultaneous = await Promise.all([
+    toggle('printed', true, 'pending', 0),
+    toggle('printed', true, 'pending', 0),
+  ]);
+  assert.deepEqual(simultaneous.map(({ status }) => status).sort(), [200, 409]);
+  const printed = simultaneous.find(({ status }) => status === 200).body
+    .certificateRequest;
+  assert.equal(printed.status, 'ready_to_mail');
+  assert.equal(printed.fulfillmentRevision, 1);
+
+  const repeated = await toggle('printed', true, 'ready_to_mail', 1).expect(
+    200,
+  );
+  assert.equal(repeated.body.certificateRequest.fulfillmentRevision, 1);
+  const mailed = await toggle('mailed', true, 'ready_to_mail', 1).expect(200);
+  assert.equal(mailed.body.certificateRequest.status, 'mailed');
+  assert.ok(mailed.body.certificateRequest.mailedAt);
+  assert.ok(
+    (await list()).body.certificateRequests.some((row) => row._id === retired),
+  );
+  await toggle('printed', false, 'mailed', 2).expect(409);
+  const unmailed = await toggle('mailed', false, 'mailed', 2).expect(200);
+  assert.equal(unmailed.body.certificateRequest.status, 'ready_to_mail');
+  assert.equal(unmailed.body.certificateRequest.mailedAt, null);
+  assert.equal(unmailed.body.certificateRequest.printedAt, printed.printedAt);
+  const stale = await toggle('mailed', true, 'ready_to_mail', 1).expect(409);
+  assert.equal(stale.body.code, 'certificate_request_fulfillment_stale');
+  const unprinted = await toggle('printed', false, 'ready_to_mail', 3).expect(
+    200,
+  );
+  assert.equal(unprinted.body.certificateRequest.status, 'pending');
+  assert.equal(unprinted.body.certificateRequest.printedAt, null);
+
+  const record = await CertificateRequest.findById(retired)
+    .select('+fulfillmentHistory')
+    .lean();
+  assert.deepEqual(record.printedCertificates, []);
+  assert.equal(record.printedBy, null);
+  assert.equal(record.mailedBy, null);
+  assert.deepEqual(
+    record.fulfillmentHistory.map(
+      ({ field, checked, previousStatus, status }) => [
+        field,
+        checked,
+        previousStatus,
+        status,
+      ],
+    ),
+    [
+      ['printed', true, 'pending', 'ready_to_mail'],
+      ['mailed', true, 'ready_to_mail', 'mailed'],
+      ['mailed', false, 'mailed', 'ready_to_mail'],
+      ['printed', false, 'ready_to_mail', 'pending'],
+    ],
+  );
+  assert.ok(
+    record.fulfillmentHistory.every(
+      ({ actor, at }) =>
+        String(actor) === String(users.editor) && at instanceof Date,
+    ),
+  );
+  assert.deepEqual(
+    (
+      await AuditLog.find({
+        target: retired,
+        'metadata.field': { $in: ['printed', 'mailed'] },
+      }).lean()
+    )
+      .map(({ action }) => action)
+      .sort(),
+    [
+      'content.certificate_request_mail_reversed',
+      'content.certificate_request_mailed',
+      'content.certificate_request_print_confirmed',
+      'content.certificate_request_print_reversed',
+    ],
+  );
+});

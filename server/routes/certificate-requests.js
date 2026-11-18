@@ -559,7 +559,10 @@ function getCertificatePrintItems(certificateRequest) {
       certificateKey: 'member',
       recipientName: cleanString(member.fullName),
     },
-    ...familyMembers.map((familyMember, index) => ({
+    ...(certificateRequest.certificateType === 'trusted_to_serve'
+      ? []
+      : familyMembers
+    ).map((familyMember, index) => ({
       certificateKey: `family:${index}`,
       recipientName: cleanString(familyMember?.fullName),
     })),
@@ -591,6 +594,7 @@ function serializeCertificateRequestStatus(certificateRequest) {
     status: certificateRequest.status,
     printedAt: certificateRequest.printedAt,
     mailedAt: certificateRequest.mailedAt,
+    fulfillmentRevision: certificateRequest.fulfillmentRevision ?? 0,
   };
 }
 
@@ -663,7 +667,11 @@ router.get(
         .lean();
 
       return res.json({
-        certificateRequests,
+        certificateRequests: certificateRequests.map((certificateRequest) => ({
+          ...certificateRequest,
+          certificateCount: getCertificatePrintItems(certificateRequest).length,
+          fulfillmentRevision: certificateRequest.fulfillmentRevision ?? 0,
+        })),
         familyWordingOptions: FAMILY_WORDING_OPTIONS,
         familyRelationshipOptions: require('../config/certificate-requests')
           .CERTIFICATE_FAMILY_RELATIONSHIPS,
@@ -677,23 +685,50 @@ router.get(
   },
 );
 
-router.patch(
-  '/:certificateRequestId/status',
-  authMiddleware,
-  requirePermission('canManageCertificateRequests'),
-  async (req, res) => {
-    try {
-      const requestedStatus = cleanString(req.body?.status);
+function getNextFulfillmentStatus(status, field, checked) {
+  const printed = ['ready_to_mail', 'printed', 'mailed'].includes(status);
+  const mailed = status === 'mailed';
+  if ((field === 'printed' ? printed : mailed) === checked) return status;
+  if (field === 'printed') {
+    if (checked && status === 'pending') return 'ready_to_mail';
+    if (!checked && printed && !mailed) return 'pending';
+  } else {
+    if (checked && printed) return 'mailed';
+    if (!checked && mailed) return 'ready_to_mail';
+  }
+  return null;
+}
 
-      if (!['ready_to_mail', 'mailed'].includes(requestedStatus)) {
+function updateFulfillment({ legacy = false } = {}) {
+  return async (req, res) => {
+    try {
+      const { expectedStatus, expectedRevision } = req.body || {};
+      const requestedStatus = legacy ? cleanString(req.body?.status) : null;
+      const field = legacy
+        ? requestedStatus === 'mailed'
+          ? 'mailed'
+          : 'printed'
+        : req.body?.field;
+      const checked = legacy ? true : req.body?.checked;
+      if (
+        legacy
+          ? !['ready_to_mail', 'mailed'].includes(requestedStatus)
+          : !['printed', 'mailed'].includes(field) ||
+            typeof checked !== 'boolean' ||
+            !CERTIFICATE_REQUEST_STATUSES.includes(expectedStatus) ||
+            !Number.isSafeInteger(expectedRevision) ||
+            expectedRevision < 0
+      ) {
         return res.status(400).json({
-          error: 'Invalid certificate request status transition',
+          error: legacy
+            ? 'Invalid certificate request status transition'
+            : 'Invalid certificate request fulfillment update',
         });
       }
 
       const certificateRequest = await CertificateRequest.findById(
         req.params.certificateRequestId,
-      );
+      ).lean();
 
       if (!certificateRequest) {
         return res.status(404).json({
@@ -701,32 +736,50 @@ router.patch(
         });
       }
 
-      if (certificateRequest.status === requestedStatus) {
+      const previousStatus = certificateRequest.status;
+      const revision = certificateRequest.fulfillmentRevision ?? 0;
+      const stale = () =>
+        res.status(409).json({
+          error:
+            'Certificate request fulfillment changed; reload and try again',
+          code: 'certificate_request_fulfillment_stale',
+        });
+      if (
+        !legacy &&
+        (expectedStatus !== previousStatus || expectedRevision !== revision)
+      )
+        return stale();
+
+      const nextStatus = getNextFulfillmentStatus(
+        previousStatus,
+        field,
+        checked,
+      );
+      if (
+        nextStatus === previousStatus &&
+        (!legacy || requestedStatus === previousStatus)
+      ) {
         return res.json({
           certificateRequest:
             serializeCertificateRequestStatus(certificateRequest),
         });
       }
 
-      const previousStatus = certificateRequest.status;
-      const isConfirmingPrint = requestedStatus === 'ready_to_mail';
-      const canConfirmPrint = certificateRequest.status === 'pending';
-      const canConfirmMail =
-        certificateRequest.status === 'ready_to_mail' ||
-        certificateRequest.status === 'printed';
-
-      if (
-        (isConfirmingPrint && !canConfirmPrint) ||
-        (!isConfirmingPrint && !canConfirmMail)
-      ) {
+      if (!nextStatus || (legacy && nextStatus !== requestedStatus)) {
         return res.status(409).json({
-          error: isConfirmingPrint
-            ? 'Certificate request must be pending before printing is confirmed'
-            : 'Certificate request must be ready to mail before mailing is confirmed',
+          error: legacy
+            ? field === 'mailed'
+              ? 'Certificate request must be ready to mail before mailing is confirmed'
+              : 'Certificate request must be pending before printing is confirmed'
+            : field === 'mailed'
+              ? 'Confirm printing before confirming mailing'
+              : 'Clear mailing before clearing printing',
+          code: 'certificate_request_fulfillment_order',
         });
       }
 
-      if (isConfirmingPrint) {
+      const confirmingPrint = field === 'printed' && checked;
+      if (legacy && confirmingPrint) {
         const printedCertificateKeys = getPrintedCertificateKeys(
           req.body?.printedCertificateKeys,
         );
@@ -741,42 +794,76 @@ router.patch(
             error: 'Confirm every requested certificate has been printed',
           });
         }
-
-        certificateRequest.status = 'ready_to_mail';
-        certificateRequest.printedBy = req.user._id;
-        certificateRequest.printedAt = new Date();
-        certificateRequest.printedCertificates =
-          getCertificatePrintItems(certificateRequest);
-      } else {
-        certificateRequest.status = 'mailed';
-        certificateRequest.mailedBy = req.user._id;
-        certificateRequest.mailedAt = new Date();
       }
 
-      certificateRequest.updatedBy = req.user._id;
-      await certificateRequest.save();
+      const actor = req.user._id;
+      const at = new Date();
+      // Compare the revision too: another staff member may have cleared and
+      // reset the same checkbox while this confirmation dialog was open.
+      const updated = await CertificateRequest.findOneAndUpdate(
+        {
+          _id: certificateRequest._id,
+          status: previousStatus,
+          fulfillmentRevision: revision === 0 ? { $in: [0, null] } : revision,
+        },
+        {
+          $set: {
+            status: nextStatus,
+            updatedBy: actor,
+            [`${field}By`]: checked ? actor : null,
+            [`${field}At`]: checked ? at : null,
+            ...(field === 'printed'
+              ? {
+                  printedCertificates: checked
+                    ? getCertificatePrintItems(certificateRequest)
+                    : [],
+                }
+              : {}),
+            fulfillmentRevision: revision + 1,
+          },
+          $push: {
+            fulfillmentHistory: {
+              field,
+              checked,
+              previousStatus,
+              status: nextStatus,
+              actor,
+              at,
+            },
+          },
+        },
+        { returnDocument: 'after', runValidators: true },
+      ).lean();
+      if (!updated) return stale();
 
       await writeAuditLog({
         req,
-        action: isConfirmingPrint
-          ? 'content.certificate_request_print_confirmed'
-          : 'content.certificate_request_mailed',
+        action:
+          field === 'printed'
+            ? checked
+              ? 'content.certificate_request_print_confirmed'
+              : 'content.certificate_request_print_reversed'
+            : checked
+              ? 'content.certificate_request_mailed'
+              : 'content.certificate_request_mail_reversed',
         actor: req.user,
         targetType: 'certificateRequest',
-        target: certificateRequest._id,
-        targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
+        target: updated._id,
+        targetSnapshot: getCertificateRequestSnapshot(updated),
         metadata: {
           previousStatus,
-          status: certificateRequest.status,
-          certificateCount: isConfirmingPrint
-            ? certificateRequest.printedCertificates.length
+          status: nextStatus,
+          field,
+          checked,
+          at,
+          certificateCount: confirmingPrint
+            ? updated.printedCertificates.length
             : undefined,
         },
       });
 
       return res.json({
-        certificateRequest:
-          serializeCertificateRequestStatus(certificateRequest),
+        certificateRequest: serializeCertificateRequestStatus(updated),
       });
     } catch (error) {
       if (error.name === 'CastError') {
@@ -793,7 +880,21 @@ router.patch(
         error: 'Could not update certificate request fulfillment status',
       });
     }
-  },
+  };
+}
+
+router.patch(
+  '/:certificateRequestId/status',
+  authMiddleware,
+  requirePermission('canManageCertificateRequests'),
+  updateFulfillment({ legacy: true }),
+);
+
+router.patch(
+  '/:certificateRequestId/fulfillment',
+  authMiddleware,
+  requirePermission('canManageCertificateRequests'),
+  updateFulfillment(),
 );
 
 module.exports = router;

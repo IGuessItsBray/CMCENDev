@@ -505,7 +505,7 @@ paths:
     get:
       tags: [Certificates]
       summary: List certificate requests for fulfillment.
-      description: Returns requests that still need printing or mailing by default. Supply a status or `status=all` to include completed requests.
+      description: Returns requests that still need printing or mailing by default. Supply a status or `status=all` to include completed requests. Each request includes its packet certificate count (`certificateCount`) and current `fulfillmentRevision`.
       x-permission: canManageCertificateRequests
       parameters:
         - in: query
@@ -1004,6 +1004,46 @@ paths:
       responses:
         "200":
           description: Certificate request fulfillment status updated.
+  /api/certificate-requests/{certificateRequestId}/fulfillment:
+    patch:
+      tags: [Certificates]
+      summary: Confirm or reverse one certificate fulfillment step.
+      description: Printing must precede mailing and mailing must be cleared before printing can be cleared. Submit the status and revision the staff member reviewed before confirming. Real changes append the actor, timestamp, and transition to the request history and staff audit log; no-op updates do not.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - $ref: "#/components/parameters/CertificateRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [field, checked, expectedStatus, expectedRevision]
+              properties:
+                field:
+                  type: string
+                  enum: [printed, mailed]
+                checked:
+                  type: boolean
+                expectedStatus:
+                  type: string
+                  enum: [pending, ready_to_mail, mailed, printed]
+                expectedRevision:
+                  type: integer
+                  minimum: 0
+      responses:
+        "200":
+          description: Current fulfillment state including status and fulfillment revision.
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          description: Stale status or revision, or an out-of-order transition.
   /robots.txt:
     get:
       tags: [Site]

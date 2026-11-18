@@ -91,7 +91,7 @@
         window.CertificateRequests.mount({
           ...options,
           showRequestForm: false,
-          showSubmittedRequests: false,
+          showSubmittedRequests: true,
         }),
     },
     analytics: {

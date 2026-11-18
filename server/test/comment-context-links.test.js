@@ -44,14 +44,14 @@ test('comment context resolves its stored original parent and published local ta
       },
     };
     assert.deepEqual(getCommentContextLinks(comment), {
-      archiveSourceLinks: [{ url: en, language: 'en' }],
+      archiveSourceLinks: [{ url: 'https://archive.cmcen-rcmce.ca/old-parent/', language: 'en' }],
       publicUrl: `${publicPath}?id=parent%26id`,
     });
     for (const status of ['draft', 'pending', 'rejected', 'hidden']) {
       comment.parentId.status = status;
       const links = getCommentContextLinks(comment);
       assert.equal(links.publicUrl, '');
-      assert.equal(links.archiveSourceLinks[0].url, en);
+      assert.equal(links.archiveSourceLinks[0].url, 'https://archive.cmcen-rcmce.ca/old-parent/');
     }
   }
 });
@@ -65,7 +65,7 @@ test('missing, unsupported, or unsafe source references never create guessed lin
     }),
     {
       archiveSourceLinks: [
-        { url: 'https://cmcen-rcmce.ca/historical-comment/', language: '' },
+        { url: 'https://archive.cmcen-rcmce.ca/historical-comment/', language: '' },
       ],
       publicUrl: '',
     },

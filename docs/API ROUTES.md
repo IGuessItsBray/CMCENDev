@@ -86,7 +86,10 @@ originalPublishedAt, precision }` for the shared confirmation dialog. Precision 
 `time`, `date` (calendar date only), or null. Missing dates are null.
 Archive items also include `archiveSourceIds`, `archiveSourceUrls`, and
 `archiveSourceLinks: [{ url, language }]` for reviewer comparison. Links use
-saved URLs on the legacy domain; `language` is `en` or `fr` only when an
+saved legacy URL paths displayed on `https://archive.cmcen-rcmce.ca`; stored
+source URLs and registry identities are unchanged. An exact root `?p=ID` route
+is accepted only when the positive numeric ID matches retained source evidence.
+Links never synthesize a missing permalink. `language` is `en` or `fr` only when an
 individual source record identifies it, and is empty otherwise. Missing or
 unsafe URLs yield an empty link list.
 The typed `originalPublishedAt` and `publicationDateChoice` fields preserve the

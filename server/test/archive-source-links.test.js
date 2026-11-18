@@ -17,8 +17,8 @@ test('keeps paired originals separate only when source records identify their la
       },
     }),
     [
-      { url: english, language: 'en' },
-      { url: french, language: 'fr' },
+      { url: 'https://archive.cmcen-rcmce.ca/old-story/', language: 'en' },
+      { url: 'https://archive.cmcen-rcmce.ca/fr/ancienne-histoire/', language: 'fr' },
     ],
   );
 });
@@ -26,7 +26,7 @@ test('keeps paired originals separate only when source records identify their la
 test('unmapped source URLs remain generic and missing URLs stay unavailable', () => {
   const url = 'https://cmcen-rcmce.ca/fr/saved-slug/';
   assert.deepEqual(getArchiveSourceLinks({ legacy: { sourceUrls: [url] } }), [
-    { url, language: '' },
+    { url: 'https://archive.cmcen-rcmce.ca/fr/saved-slug/', language: '' },
   ]);
   assert.deepEqual(
     getArchiveSourceLinks({ legacy: { sourcePostIds: [123] } }),
@@ -65,7 +65,7 @@ test('rejects unsafe URLs and conflicting language tags across content types', (
       },
     };
     assert.deepEqual(getArchiveSourceLinks(content), [
-      { url: valid, language: '' },
+      { url: 'https://archive.cmcen-rcmce.ca/source-story/', language: '' },
     ]);
   }
 });

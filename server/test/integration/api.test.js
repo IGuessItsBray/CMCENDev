@@ -625,12 +625,12 @@ describe('workspace comment parent context', () => {
           assert.equal(staffParent.body.items[0]._id, String(parent));
         }
         assert(item.content.parentTitle.includes('Example'));
-        assert.deepEqual(item.archiveSourceLinks, [{ url: sourceUrl, language: 'en' }]);
+        assert.deepEqual(item.archiveSourceLinks, [{ url: 'https://archive.cmcen-rcmce.ca/original-parent/', language: 'en' }]);
         await Model.deleteOne({ _id: parent });
         const orphan = await request(app).get(`/api/admin/content?scope=submissions&type=comment&id=${comment._id}`).set('Authorization', auth).expect(200);
         assert.equal(orphan.body.items[0].content.publicUrl, '');
         assert.equal(orphan.body.items[0].content.staffParentLink, null);
-        assert.equal(orphan.body.items[0].archiveSourceLinks[0].url, sourceUrl);
+        assert.equal(orphan.body.items[0].archiveSourceLinks[0].url, 'https://archive.cmcen-rcmce.ca/original-parent/');
       }
     }
   });
@@ -4257,8 +4257,8 @@ describe('archival draft lifecycle', () => {
         original.toISOString(),
       );
       assert.deepEqual(listing.body.items[0].archiveSourceLinks, [
-        { url: 'https://cmcen-rcmce.ca/historical-notice/', language: 'en' },
-        { url: 'https://cmcen-rcmce.ca/fr/avis-historique/', language: 'fr' },
+        { url: 'https://archive.cmcen-rcmce.ca/historical-notice/', language: 'en' },
+        { url: 'https://archive.cmcen-rcmce.ca/fr/avis-historique/', language: 'fr' },
       ]);
       await request(app)
         .patch(url)
@@ -4290,7 +4290,7 @@ describe('archival draft lifecycle', () => {
       .get(`/api/admin/content?type=comment&id=${comment._id}`)
       .set('Authorization', token).expect(200);
     assert.deepEqual(commentListing.body.items[0].archiveSourceLinks, [
-      { url: 'https://cmcen-rcmce.ca/historical-comment/', language: '' },
+      { url: 'https://archive.cmcen-rcmce.ca/historical-comment/', language: '' },
     ]);
     const url = `/api/comments/${comment._id}/review`;
     await request(app)
@@ -4330,7 +4330,7 @@ describe('archival draft lifecycle', () => {
       .get(`/api/admin/content?type=event&id=${event._id}`)
       .set('Authorization', token).expect(200);
     assert.deepEqual(eventListing.body.items[0].archiveSourceLinks, [
-      { url: 'https://cmcen-rcmce.ca/historical-event/', language: '' },
+      { url: 'https://archive.cmcen-rcmce.ca/historical-event/', language: '' },
     ]);
     const newsletter = await NewsArticle.create({
       status: 'draft',
@@ -4390,9 +4390,9 @@ describe('archival draft lifecycle', () => {
     const item = queue.body.items.find((entry) => entry._id === String(imported._id));
     assert.ok(item);
     assert.equal(item.publicationDate.isArchive, true);
-    assert.deepEqual(item.archiveSourceUrls, ['https://cmcen-rcmce.ca/imported-draft-filter-example/']);
+    assert.deepEqual(item.archiveSourceUrls, ['https://archive.cmcen-rcmce.ca/imported-draft-filter-example/']);
     assert.deepEqual(item.archiveSourceLinks, [{
-      url: 'https://cmcen-rcmce.ca/imported-draft-filter-example/', language: 'en',
+      url: 'https://archive.cmcen-rcmce.ca/imported-draft-filter-example/', language: 'en',
     }]);
     const custom = '2007-06-05T12:00:00.000Z';
     await request(app)

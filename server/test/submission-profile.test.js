@@ -193,6 +193,8 @@ for (const [page, form, button, setup] of [
       [button]: control,
       [setup]: { check: () => { checkCalls++; return new Promise((resolve) => { checking = resolve; }); } },
       clearRetirementFormMessage() {}, clearFormMessage() {},
+      showRetirementSubmissionStatus() {}, showFormMessage() {},
+      translate: (key) => key,
       buildRetirementMessageData: () => ({}), buildEventData: () => ({}),
       setRetirementSubmitting(value) { control.disabled = value; },
       setSubmitting(value) { control.disabled = value; context.isSubmitting = value; },

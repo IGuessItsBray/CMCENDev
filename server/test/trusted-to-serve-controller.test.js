@@ -122,16 +122,57 @@ test('requests retain idempotent snapshots through retries and language changes'
   await page.control('download').fire('click');
   assert.equal(page.calls[0].body.requestId, page.calls[1].body.requestId);
   assert.equal(page.controller.hasUnsavedChanges(), false);
-  await page.control('download').fire('click');
+  assert.equal(page.control('download'), null);
   assert.equal(page.calls.length, 2);
-  page.control('firstName').value = 'Alex';
-  await page.control('firstName').fire('input');
-  assert.equal(page.control('reviewed').checked, false);
-  await reviewed(page);
-  await page.control('download').fire('click');
-  assert.notEqual(page.calls[0].body.requestId, page.calls[2].body.requestId);
   page.controller.dispose();
   assert.equal(page.controller.hasUnsavedChanges(), false);
+});
+test('both certificate forms visibly time out, retry the same request and retain a localized receipt', async () => {
+  for (const retirement of [false, true]) {
+    let resolveLate, attempt = 0;
+    const page = setup(
+      () => ++attempt === 1
+        ? new Promise((yes) => { resolveLate = yes; })
+        : Promise.resolve({ certificateRequest: { id: 'synthetic-reference', status: 'pending' } }),
+      retirement,
+      true,
+    );
+    await reviewed(page);
+    const button = page.control('download');
+    const pending = button.fire('click');
+    assert.equal(button.getAttribute('aria-busy'), 'true');
+    assert.equal(button.disabled, true);
+    assert.equal(page.status(), 'trusted_request_generating');
+    assert.equal(page.root.querySelector('.certificate-request-receipt'), null);
+    page.expireConfirmation();
+    await pending;
+    assert.equal(page.calls[0].signal.aborted, true);
+    assert.equal(button.getAttribute('aria-busy'), 'false');
+    assert.equal(button.disabled, false);
+    assert.equal(page.status(), 'trusted_request_error');
+    resolveLate({ certificateRequest: { id: 'unconfirmed', status: 'pending' } });
+    await Promise.resolve();
+    assert.equal(page.root.querySelector('.certificate-request-receipt'), null);
+    await button.fire('click');
+    assert.deepEqual(page.calls[1].body, page.calls[0].body);
+    assert.equal(page.status(), 'trusted_request_success');
+    assert.equal(page.root.querySelector('form'), null);
+    assert.equal(page.root.querySelector('input'), null);
+    assert.equal(page.root.querySelector('select'), null);
+    assert.equal(page.root.querySelector('button'), null);
+    const announcement = page.root.querySelector('.certificate-request-receipt').parent;
+    assert.equal(page.document.activeElement, announcement);
+    assert.equal(announcement.getAttribute('role'), 'status');
+    assert.equal(announcement.getAttribute('aria-atomic'), 'true');
+    page.window.translate = (key, values) => `fr:${key}:${values?.reference || ''}`;
+    await page.document.fire('languagechange');
+    const receipt = page.root.querySelector('.certificate-request-receipt');
+    assert.equal(receipt.textContent, 'fr:trusted_request_receipt:synthetic-reference');
+    assert.equal(page.status(), 'fr:trusted_request_success:');
+    assert.equal(page.control('firstName'), null);
+    assert.equal(page.control('download'), null);
+    page.controller.dispose();
+  }
 });
 test('request validation allows corrections; pending requests guard double clicks and abort', async () => {
   let fail = true,
@@ -165,6 +206,74 @@ test('request validation allows corrections; pending requests guard double click
   resolve({ certificateRequest: { id: 'r1', status: 'pending' } });
   await pending;
   assert.equal(page.root.children.length, 0);
+});
+test('certificate forms label requirements, point to the unchecked review box and send only once reviewed', async () => {
+  for (const retirement of [false, true]) {
+    const page = setup(
+      async () => ({ certificateRequest: { id: 'synthetic-confirmed', status: 'pending' } }),
+      retirement,
+      true,
+      true,
+    );
+    const guide = page.root.querySelector('.certificate-required-guide');
+    assert.equal(guide.textContent, 'trusted_request_required_guide');
+    for (const field of [page.control('firstName'), page.picker('neededByDate').picker]) {
+      assert.ok(field.parent.querySelector('.certificate-required-mark'));
+    }
+    for (const field of [page.control('postNominals'), page.root.querySelector('.trusted-request-line2')]) {
+      assert.equal(field.required, false);
+      assert.equal(field.parent.querySelector('.certificate-required-mark'), null);
+    }
+    page.picker('neededByDate').picker.setValue({ date: '2026-11-20', emit: true });
+    await page.control('download').fire('click');
+    assert.equal(page.calls.length, 0);
+    const review = page.control('reviewed');
+    const status = page.root.querySelector('.certificate-request-feedback');
+    assert.equal(page.document.activeElement, review);
+    assert.equal(review.getAttribute('aria-invalid'), 'true');
+    assert.equal(review.getAttribute('aria-describedby'), status.id);
+    assert.equal(page.status(), 'trusted_request_review_required');
+    assert.equal(status.dataset.tone, 'error');
+    await reviewed(page);
+    assert.equal(review.getAttribute('aria-invalid'), null);
+    assert.equal(status.textContent, '');
+    await page.control('download').fire('click');
+    assert.equal(page.calls.length, 1);
+    assert.equal(page.status(), 'trusted_request_success');
+    assert.equal(page.control('download'), null);
+    page.controller.dispose();
+  }
+});
+
+test('retirement preserves and focuses the exact invalid post-nominals field after a definite rejection', async () => {
+  let reject = true;
+  const page = setup(async () => {
+    if (reject) throw Object.assign(new Error('Invalid'), {
+      status: 422, data: { code: 'certificate_data_invalid', error: 'Valid certificate decorations are required.' },
+    });
+    return { certificateRequest: { id: 'synthetic-confirmed', status: 'pending' } };
+  }, true, true);
+  const field = page.control('postNominals');
+  field.value = 'a';
+  await field.fire('input');
+  await reviewed(page);
+  await page.control('download').fire('click');
+  assert.equal(page.document.activeElement, field);
+  assert.equal(field.getAttribute('aria-invalid'), 'true');
+  assert.equal(field.value, 'a');
+  const problem = field.parent.querySelector('.certificate-field-error');
+  assert.equal(problem.textContent, 'trusted_request_invalid_post_nominals');
+  assert.ok(field.getAttribute('aria-describedby').includes(problem.id));
+  assert.equal(page.status(), 'trusted_request_fields_required');
+  reject = false;
+  field.value = '';
+  await field.fire('input');
+  assert.equal(problem.hidden, true);
+  assert.equal(field.getAttribute('aria-invalid'), null);
+  await reviewed(page);
+  await page.control('download').fire('click');
+  assert.equal(page.status(), 'trusted_request_success');
+  page.controller.dispose();
 });
 test('retirement request submits structured member data without PDF actions', async () => {
   const page = setup(
@@ -243,20 +352,9 @@ for (const retirement of [false, true]) {
     await page.control('download').fire('click');
     assert.equal(page.calls[0].url, `/api/certificate-requests/${kind}`);
     assert.equal(page.calls[0].body.neededByDate, '2026-11-20');
-    assert.equal(page.control('download').disabled, true);
-    assert.equal(translated.trigger.disabled, false);
-
-    translated.picker.setValue({ date: '', emit: true });
-    assert.equal(page.control('reviewed').checked, false);
-    assert.equal(page.control('download').disabled, false);
-    await reviewed(page);
-    await page.control('download').fire('click');
+    assert.equal(page.control('download'), null);
+    assert.equal(translated.destroyed, 1);
     assert.equal(page.calls.length, 1);
-    translated.picker.setValue({ date: '2026-11-21', emit: true });
-    await reviewed(page);
-    await page.control('download').fire('click');
-    assert.equal(page.calls[1].body.neededByDate, '2026-11-21');
-    assert.notEqual(page.calls[0].body.requestId, page.calls[1].body.requestId);
     page.controller.dispose();
     assert.ok(page.pickers.every((picker) => picker.destroyed === 1));
   });
@@ -304,8 +402,8 @@ for (const retirement of [false, true]) {
     assert.equal(retry.picker.getValue().date, '2026-11-20');
     await page.control('download').fire('click');
     assert.deepEqual(page.calls[1].body, page.calls[0].body);
-    assert.equal(retry.trigger.disabled, false);
-    assert.ok(retry.popover.elements.every((control) => !control.disabled));
+    assert.equal(retry.destroyed, 1);
+    assert.equal(page.control('download'), null);
     page.controller.dispose();
     assert.ok(page.pickers.every((picker) => picker.destroyed === 1));
   });
@@ -346,7 +444,8 @@ function setup(
     urls = [],
     revoked = [],
     downloads = [],
-    pickers = [];
+    pickers = [],
+    confirmationTimers = new Set();
   document.body = new Element('body');
   document.createElement = (tag) => {
     const element = new Element(tag);
@@ -414,7 +513,13 @@ function setup(
       window,
       document,
       AbortController,
-      setTimeout: (fn) => fn(),
+      AbortSignal,
+      setTimeout: (fn, ms) => {
+        if (ms === 30000) confirmationTimers.add(fn);
+        else fn();
+        return fn;
+      },
+      clearTimeout: (fn) => confirmationTimers.delete(fn),
       URL: {
         createObjectURL: () => {
           const value = `blob:award-${urls.length}`;
@@ -438,6 +543,15 @@ function setup(
       controller.dispose();
     },
   });
+  if (customPicker) {
+    for (const [key, date] of Object.entries(memberRetirement
+      ? { ceBranchEnrollmentDate: '2000-01-01', releaseDate: '2026-12-01' }
+      : { presentationDate: '2026-12-01' })) {
+      pickers.find((entry) => entry.options.name === key).picker.setValue({
+        date, emit: true,
+      });
+    }
+  }
   const control = (key) => root.querySelector(`.trusted-award-${key}`);
   const fill = async () => {
     for (const [key, value] of Object.entries({
@@ -472,7 +586,15 @@ function setup(
         (entry) => entry.options.name === name && !entry.destroyed,
       ),
     denied: () => denied,
-    status: () => root.querySelector('p').textContent,
+    status: () =>
+      (
+        root.querySelector('.certificate-request-feedback') ||
+        root.querySelector('p')
+      ).textContent,
+    expireConfirmation: () => {
+      assert.equal(confirmationTimers.size, 1);
+      [...confirmationTimers][0]();
+    },
   };
 }
 

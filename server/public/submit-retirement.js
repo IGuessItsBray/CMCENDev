@@ -192,8 +192,13 @@ function renderRetirementDeleteAction() {
       window.location.href = "/retirements";
     } catch (error) {
       deleteButton.disabled = false;
-      showRetirementSubmissionToast(
+      CMCENUtils.showToast(
         error.message || "Could not remove retirement message",
+        {
+          color: "error",
+          position: "bottom-right",
+          animation: "slide",
+        },
       );
     }
   });
@@ -235,28 +240,23 @@ function clearRetirementFormMessage() {
   retirementFormMessage.hidden = true;
 }
 
-function showRetirementSubmissionToast(message, type = "error") {
-  CMCENUtils.showToast(message, {
-    color: type === "success" ? "success" : "error",
-    position: "bottom-right",
-    animation: "slide",
-  });
+function showRetirementSubmissionStatus(message, type = "error") {
+  const status = document.getElementById("retirementSubmissionStatus");
+  status.className = `event-form-message is-${type}`;
+  status.textContent = message;
 }
 
 function setRetirementSubmitting(isSubmitting) {
   retirementSubmitButton.disabled = isSubmitting;
   retirementSubmitButton.setAttribute("aria-busy", String(isSubmitting));
-  retirementSubmitButton.setAttribute(
-    "aria-label",
-    translate(
-      isSubmitting
-        ? "retirement_submitting"
-        : editingRetirementMessageId
-          ? personalSubmission
-            ? "my_submissions_resubmit"
-            : "retirement_save_changes"
-          : "retirement_submit_button",
-    ),
+  retirementSubmitButtonLabel.textContent = translate(
+    isSubmitting
+      ? "retirement_submitting"
+      : editingRetirementMessageId
+        ? personalSubmission
+          ? "my_submissions_resubmit"
+          : "retirement_save_changes"
+        : "retirement_submit_button",
   );
 }
 
@@ -276,12 +276,8 @@ function updateRetirementFormModeText() {
   }
 
   if (retirementSubmitButtonLabel) {
-    retirementSubmitButtonLabel.textContent = translate(
-      isEditing
-        ? personalSubmission
-          ? "my_submissions_resubmit"
-          : "retirement_save_changes"
-        : "retirement_submit_button",
+    setRetirementSubmitting(
+      retirementSubmitButton.getAttribute("aria-busy") === "true",
     );
   }
 
@@ -1132,6 +1128,7 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
   if (retirementSubmitButton.disabled) return;
 
   clearRetirementFormMessage();
+  showRetirementSubmissionStatus("");
 
   if (!retirementSubmitForm.checkValidity()) {
     retirementSubmitForm.reportValidity();
@@ -1143,15 +1140,19 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
   try {
     formData = buildRetirementMessageData();
   } catch (error) {
-    showRetirementSubmissionToast(error.message);
+    showRetirementSubmissionStatus(error.message);
 
     return;
   }
 
   setRetirementSubmitting(true);
+  showRetirementSubmissionStatus(translate("retirement_submitting"), "info");
 
   try {
-    if (!(await retirementProfileNotice.check({ focus: true }))) return;
+    if (!(await retirementProfileNotice.check({ focus: true }))) {
+      showRetirementSubmissionStatus("");
+      return;
+    }
     const uploadResult = await uploadRetirementPhoto();
     formData.photoUrl = uploadResult.photoUrl;
     formData.photoDisplayUrl = uploadResult.photoDisplayUrl;
@@ -1178,7 +1179,7 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
       populateRetirementSubmitterFromProfile(currentRetirementUser);
     }
 
-    showRetirementSubmissionToast(
+    showRetirementSubmissionStatus(
       data.status === "published" ||
         data.retirementMessage?.status === "published"
         ? translate("retirement_submit_success_published")
@@ -1211,7 +1212,7 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
       window.refreshAuthUI();
     }
   } catch (error) {
-    showRetirementSubmissionToast(
+    showRetirementSubmissionStatus(
       error.message || translate("retirement_submit_error"),
     );
   } finally {

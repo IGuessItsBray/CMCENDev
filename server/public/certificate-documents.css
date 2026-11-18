@@ -174,6 +174,83 @@
 .certificate-document-actions button {
   min-height: 44px;
 }
+.certificate-request-feedback,
+.certificate-request-receipt {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.trusted-award-form {
+  --certificate-error-text: #85201b;
+  --certificate-error-surface: #fcebea;
+  --certificate-error-border: #a12c25;
+}
+html[data-theme='dark'] .trusted-award-form {
+  --certificate-error-text: #ffd3cf;
+  --certificate-error-surface: #431c23;
+  --certificate-error-border: #f19d95;
+}
+.trusted-award-form .certificate-required-guide {
+  font-weight: 500;
+  color: var(--admin-muted, #526072);
+}
+.certificate-required-mark,
+.certificate-field-error {
+  color: var(--certificate-error-text);
+  font-weight: 750;
+}
+.trusted-award-form .certificate-request-feedback[data-tone='error'] {
+  max-width: none;
+  padding: 0.75rem 1rem;
+  color: var(--certificate-error-text);
+  background: var(--certificate-error-surface);
+  border: 1px solid var(--certificate-error-border);
+  border-inline-start-width: 0.35rem;
+  border-radius: 0.4rem;
+  font-weight: 700;
+}
+.trusted-award-form :is(input, select, button)[aria-invalid='true'] {
+  border-color: var(--certificate-error-border);
+  outline: 2px solid var(--certificate-error-border);
+  outline-offset: 2px;
+  scroll-margin-block-start: 12rem;
+}
+.trusted-award-review-label:has(input[aria-invalid='true']) {
+  background: var(--certificate-error-surface);
+  color: var(--certificate-error-text);
+  box-shadow: inset 0 0 0 2px var(--certificate-error-border);
+}
+.certificate-request-receipt {
+  font-weight: 600;
+}
+.certificate-document-actions button[data-request-submit] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.certificate-request-spinner {
+  display: none;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+}
+[data-request-submit][aria-busy='true'] .certificate-request-spinner {
+  display: inline-block;
+  animation: certificate-request-spin 700ms linear infinite;
+}
+@keyframes certificate-request-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-request-submit][aria-busy='true'] .certificate-request-spinner {
+    animation: none;
+  }
+}
 .certificate-family-documents {
   display: grid;
   gap: 20px;

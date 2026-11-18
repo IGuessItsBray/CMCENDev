@@ -25,9 +25,8 @@
 
         <p
           class="contact-message"
-          id="contactMessage"
-          role="status"
-          aria-live="polite"
+          id="contactLoadMessage"
+          role="alert"
           hidden
         ></p>
 
@@ -75,6 +74,7 @@
           <button class="contact-submit" id="contactSubmitButton" type="submit">
             <span data-i18n="contact_send">Send message</span>
           </button>
+          <p class="contact-message" id="contactMessage" role="status"></p>
         </form>
       </section>
     </main>

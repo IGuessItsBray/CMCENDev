@@ -51,15 +51,13 @@ function showPageMessage(message) {
 }
 
 function showFormMessage(message, type = "error") {
-  CMCENUtils.showToast(message, {
-    color: type === "success" ? "success" : "error",
-    position: "bottom-right",
-    animation: "slide",
-  });
+  const status = document.getElementById("lastPostFormMessage");
+  status.className = `event-form-message is-${type}`;
+  status.textContent = message;
 }
 
 function clearFormMessage() {
-  // Form results are presented as transient toasts.
+  document.getElementById("lastPostFormMessage").textContent = "";
 }
 
 function setSubmitting(isSubmitting) {
@@ -119,13 +117,7 @@ function updateLastPostFormMode() {
   lastPostSubmitIntro.textContent = translate(
     isEditing ? "last_post_edit_intro" : "last_post_submit_intro",
   );
-  lastPostSubmitButtonLabel.textContent = translate(
-    isEditing
-      ? personalSubmission
-        ? "my_submissions_resubmit"
-        : "last_post_save_changes"
-      : "last_post_submit_button",
-  );
+  setSubmitting(lastPostSubmitButton.getAttribute("aria-busy") === "true");
   updateLastPostEditContext();
 }
 
@@ -309,8 +301,12 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
   if (!token) return;
 
   setSubmitting(true);
+  showFormMessage(translate("last_post_submitting"), "info");
   try {
-    if (!(await lastPostProfileNotice.check({ focus: true }))) return;
+    if (!(await lastPostProfileNotice.check({ focus: true }))) {
+      clearFormMessage();
+      return;
+    }
     const uploadResult = await uploadLastPostImage(token);
     const submissionPayload = getSubmissionPayload(
       uploadResult?.imageUrl || "",

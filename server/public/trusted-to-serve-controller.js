@@ -1,5 +1,6 @@
 "use strict";
 (() => {
+  const REQUEST_CONFIRMATION_TIMEOUT_MS = 30000;
   function mount({
     root,
     api,
@@ -12,13 +13,16 @@
     const lifecycle = new AbortController(),
       urls = new Set(),
       datePickers = new Set();
+    const requestFormId = memberRetirement
+      ? "retirement-request"
+      : "trusted-request";
     let disposed = false,
       busy = false,
       message = "";
     let dirty = false,
-      submitted = false,
       requestId,
-      requestSnapshot;
+      requestSnapshot,
+      requestReceipt;
     const delivery = {
       neededByDate: "",
       requesterRelationship: "",
@@ -83,14 +87,94 @@
       );
     let controls = [],
       status,
-      neededByPicker,
-      neededByDateInvalid = false;
+      requestSubmitButton,
+      requestSubmitLabel,
+      neededByPicker;
+    let requestFields = [],
+      validationActive = false,
+      rejectedPostNominals = false,
+      problemNames = [];
     let expanded = initiallyExpanded ?? !memberRetirement;
     let familyOptions = { relationships: [], wordings: [] };
     let refreshFamilyQuestions = [];
+    function requiredMark(label) {
+      let caption = label;
+      if (label.tagName === "LABEL") {
+        caption = label.querySelector("span");
+        if (!caption) {
+          caption = document.createElement("span");
+          caption.textContent = label.textContent;
+          label.textContent = "";
+          label.append(caption);
+        }
+      }
+      const mark = document.createElement("span");
+      mark.className = "certificate-required-mark";
+      mark.textContent = " *";
+      mark.setAttribute("aria-hidden", "true");
+      caption.append(mark);
+    }
+    function nativeFieldProblem(control) {
+      if (
+        control.validity?.valueMissing ||
+        (control.value && !control.value.trim())
+      )
+        return "validation_field_required";
+      return control.validity?.valid === false
+        ? "trusted_request_invalid_field"
+        : "";
+    }
+    function addRequestField(
+      label,
+      control,
+      title,
+      problem = () => nativeFieldProblem(control),
+      required = true,
+    ) {
+      if (!requestMode) return;
+      if (required) requiredMark(label);
+      const error = document.createElement("span");
+      error.className = "certificate-field-error";
+      error.id = `${requestFormId}-field-${requestFields.length + 1}-error`;
+      error.hidden = true;
+      requestFields.push({ label, control, title, problem, error });
+    }
+    function validateRequestFields() {
+      problemNames = [];
+      let first;
+      for (const { control, title, problem, error } of requestFields) {
+        const key = validationActive ? problem() : "";
+        const descriptions = (control.getAttribute("aria-describedby") || "")
+          .split(/\s+/u)
+          .filter((id) => id && id !== error.id);
+        if (key) {
+          first ||= control;
+          problemNames.push(title());
+          descriptions.push(error.id);
+          control.setAttribute("aria-invalid", "true");
+        } else {
+          control.removeAttribute("aria-invalid");
+        }
+        if (descriptions.length)
+          control.setAttribute("aria-describedby", descriptions.join(" "));
+        else control.removeAttribute("aria-describedby");
+        error.hidden = !key;
+        error.textContent = key ? t(key) : "";
+      }
+      return first;
+    }
     function update() {
       if (disposed) return;
-      status.textContent = t(message || "trusted_award_intro");
+      status.textContent = message
+        ? t(
+            message,
+            message === "trusted_request_fields_required"
+              ? { fields: problemNames.join(", ") }
+              : {},
+          )
+        : requestMode
+          ? ""
+          : t("trusted_award_intro");
       if (requestMode && message === "trusted_request_session_expired") {
         const link = document.createElement("a");
         link.href = "/login?returnTo=%2Fcertificates";
@@ -99,13 +183,29 @@
         link.textContent = " " + t("trusted_request_sign_in_link");
         status.append(link);
       }
-      status.setAttribute("aria-busy", String(busy));
+      if (requestMode) {
+        status.dataset.tone = !message
+          ? ""
+          : busy
+            ? "pending"
+            : "error";
+        requestSubmitButton.setAttribute("aria-busy", String(busy));
+        requestSubmitLabel.textContent = t(
+          busy
+            ? "trusted_request_generating"
+            : requestSnapshot
+              ? "trusted_request_retry"
+              : "trusted_request_submit",
+        );
+      } else {
+        status.setAttribute("aria-busy", String(busy));
+      }
       for (const control of controls)
         control.disabled =
           busy ||
           (requestMode &&
-            ((requestSnapshot && control.dataset.requestSubmit !== "true") ||
-              (submitted && control.dataset.requestSubmit === "true"))) ||
+            requestSnapshot &&
+            control.dataset.requestSubmit !== "true") ||
           (control.dataset.requiresFamilyOptions === "true" &&
             (!familyOptions.wordings.length ||
               draft.familyMembers.length >= 20));
@@ -114,25 +214,15 @@
         for (const tag of ["button", "input", "select"])
           for (const control of neededByPicker.popover.querySelectorAll(tag))
             control.disabled = neededByPicker.trigger.disabled;
-        neededByPicker.error.hidden = !neededByDateInvalid;
-        if (neededByDateInvalid) {
-          neededByPicker.trigger.setAttribute("aria-invalid", "true");
-          neededByPicker.trigger.setAttribute(
-            "aria-describedby",
-            neededByPicker.error.id,
-          );
-        } else {
-          neededByPicker.trigger.removeAttribute("aria-invalid");
-          neededByPicker.trigger.removeAttribute("aria-describedby");
-        }
       }
     }
-    function render() {
+    function render(focusReceipt = false) {
       if (disposed) return;
       for (const picker of datePickers) picker.destroy();
       datePickers.clear();
       neededByPicker = undefined;
       controls = [];
+      requestFields = [];
       refreshFamilyQuestions = [];
       const panel = document.createElement("details");
       panel.className = "trusted-award-panel";
@@ -142,6 +232,27 @@
       });
       const summary = document.createElement("summary");
       summary.textContent = t("trusted_award_title");
+      if (requestMode && requestReceipt) {
+        if (focusReceipt === true) panel.open = expanded = true;
+        const receipt = document.createElement("div");
+        receipt.className = "trusted-award-form";
+        receipt.setAttribute("tabindex", "-1");
+        receipt.setAttribute("role", "status");
+        receipt.setAttribute("aria-atomic", "true");
+        const confirmation = document.createElement("p");
+        confirmation.className = "certificate-request-feedback";
+        confirmation.textContent = t("trusted_request_success");
+        const reference = document.createElement("p");
+        reference.className = "certificate-request-receipt";
+        reference.textContent = t("trusted_request_receipt", {
+          reference: requestReceipt,
+        });
+        receipt.append(confirmation, reference);
+        panel.append(summary, receipt);
+        root.replaceChildren(panel);
+        if (focusReceipt === true) receipt.focus();
+        return;
+      }
       const form = document.createElement("form");
       form.className = "trusted-award-form";
       form.addEventListener("submit", (event) => {
@@ -150,7 +261,19 @@
       });
       status = document.createElement("p");
       status.setAttribute("role", "status");
-      form.append(status);
+      if (requestMode) {
+        const introduction = document.createElement("p");
+        introduction.textContent = t("trusted_award_intro");
+        const requiredGuide = document.createElement("p");
+        requiredGuide.className = "certificate-required-guide";
+        requiredGuide.textContent = t("trusted_request_required_guide");
+        form.append(introduction, requiredGuide);
+        status.className = "certificate-request-feedback";
+        status.id = `${requestFormId}-feedback`;
+        status.setAttribute("aria-atomic", "true");
+      } else {
+        form.append(status);
+      }
       const groups = {};
       for (const key of ["recipient", "ranks", "presentation"]) {
         const fieldset = document.createElement("fieldset");
@@ -165,17 +288,17 @@
       }
       let review;
       const changed = () => {
-        if (requestMode) {
-          dirty = true;
-          if (submitted) {
-            requestId = undefined;
-            requestSnapshot = undefined;
-            submitted = false;
-          }
-        }
+        if (requestMode) dirty = true;
         draft.reviewed = false;
-        if (review) review.checked = false;
-        message = "";
+        if (review) {
+          review.checked = false;
+          review.removeAttribute("aria-invalid");
+          review.removeAttribute("aria-describedby");
+        }
+        message =
+          requestMode && validateRequestFields()
+            ? "trusted_request_fields_required"
+            : "";
         for (const refresh of refreshFamilyQuestions) refresh();
         update();
       };
@@ -194,6 +317,16 @@
         const label = document.createElement("label");
         label.className = `trusted-award-field trusted-award-field-${key}`;
         label.textContent = t(`trusted_award_${key}`);
+        const fieldTitle = () => t(`trusted_award_${key}`);
+        const required = !["postNominals", "dwdDate"].includes(key);
+        const dateProblem = () =>
+          !draft[key]
+            ? "validation_field_required"
+            : key === "releaseDate" &&
+                draft.ceBranchEnrollmentDate &&
+                draft.releaseDate < draft.ceBranchEnrollmentDate
+              ? "trusted_request_release_order"
+              : "";
         if (type === "date" && window.CMCENDateTimePicker?.create) {
           const picker = window.CMCENDateTimePicker.create({
             name: key,
@@ -208,23 +341,56 @@
               changed();
             },
           });
+          const trigger = picker.querySelector(".cmcen-date-time-trigger");
+          if (required)
+            addRequestField(label, trigger, fieldTitle, dateProblem);
           label.append(picker);
           groups.presentation.append(label);
           datePickers.add(picker);
-          controls.push(picker.querySelector(".cmcen-date-time-trigger"));
+          controls.push(trigger);
           continue;
         }
         const input = document.createElement("input");
         input.type = type;
-        input.required = !["postNominals", "dwdDate"].includes(key);
+        input.required = required;
         input.className = `trusted-award-${key}`;
         input.value = draft[key];
         if (maxLength) input.maxLength = maxLength;
         input.addEventListener("input", () => {
           draft[key] = input.value;
+          if (key === "postNominals") rejectedPostNominals = false;
           changed();
         });
+        if (required)
+          addRequestField(
+            label,
+            input,
+            fieldTitle,
+            () =>
+              nativeFieldProblem(input) ||
+              (key === "releaseDate" && draft.releaseDate ? dateProblem() : ""),
+          );
+        if (requestMode && memberRetirement && key === "postNominals") {
+          addRequestField(
+            label,
+            input,
+            fieldTitle,
+            () =>
+              rejectedPostNominals
+                ? "trusted_request_invalid_post_nominals"
+                : "",
+            false,
+          );
+        }
         label.append(input);
+        if (requestMode && memberRetirement && key === "postNominals") {
+          const hint = document.createElement("span");
+          hint.className = "certificate-required-guide";
+          hint.id = `${requestFormId}-post-nominals-hint`;
+          hint.textContent = t("trusted_request_post_nominals_hint");
+          input.setAttribute("aria-describedby", hint.id);
+          label.append(hint);
+        }
         groups[
           ["firstName", "lastName", "postNominals"].includes(key)
             ? "recipient"
@@ -262,6 +428,7 @@
         refreshFrenchForm();
         changed();
       });
+      addRequestField(rankLabel, fullRank, () => t("trusted_award_fullRankEn"));
       rankLabel.append(fullRank);
       groups.ranks.append(rankLabel);
       if (!memberRetirement) {
@@ -291,6 +458,7 @@
           draft.awardRole = select.value;
           changed();
         });
+        addRequestField(label, select, () => t("trusted_award_awardRole"));
         label.append(select);
         groups.recipient.append(label);
         controls.push(select);
@@ -332,6 +500,7 @@
           draft[key] = select.value;
           changed();
         });
+        addRequestField(label, select, () => t(`trusted_award_${key}`));
         label.append(select);
         groups.presentation.append(label);
         controls.push(select);
@@ -342,12 +511,20 @@
         const legend = document.createElement("legend");
         legend.textContent = t("certificate_family_heading");
         families.append(legend);
+        if (requestMode) {
+          const hint = document.createElement("p");
+          hint.className = "certificate-required-guide";
+          hint.textContent = t("trusted_request_family_requirements");
+          families.append(hint);
+        }
         draft.familyMembers.forEach((family, index) => {
           const row = document.createElement("div");
           row.className = "trusted-award-fields certificate-manual-family";
           const question = document.createElement("span");
+          const questionText = document.createElement("span");
+          question.append(questionText);
           const updateQuestion = () => {
-            question.textContent = t(
+            questionText.textContent = t(
               "certificate_member_relationship_question",
               {
                 member:
@@ -397,6 +574,14 @@
               updateQuestion();
               if (key === "relationship") render();
             });
+            addRequestField(label, input, () =>
+              t(
+                key === "fullName"
+                  ? "trusted_request_family_name_field"
+                  : "trusted_request_family_relationship_field",
+                { number: index + 1 },
+              ),
+            );
             label.append(input);
             row.append(label);
             controls.push(input);
@@ -491,24 +676,25 @@
                   return;
                 }
                 target[key] = date;
-                neededByDateInvalid = false;
                 changed();
               },
             });
             const trigger = picker.querySelector(".cmcen-date-time-trigger");
             trigger.id = `${memberRetirement ? "retirement" : "trusted"}-request-needed-by`;
             label.htmlFor = trigger.id;
-            const error = document.createElement("span");
-            error.id = `${trigger.id}-error`;
-            error.textContent = t("validation_field_required");
             neededByPicker = {
               trigger,
-              error,
               popover: picker.querySelector(".cmcen-date-time-popover"),
             };
+            addRequestField(
+              label,
+              trigger,
+              () => t("trusted_request_neededByDate"),
+              () => (delivery.neededByDate ? "" : "validation_field_required"),
+            );
             datePickers.add(picker);
             controls.push(trigger);
-            label.append(picker, error);
+            label.append(picker);
             fields.append(label);
             continue;
           }
@@ -531,6 +717,8 @@
             target[key] = input.value;
             changed();
           });
+          if (input.required)
+            addRequestField(label, input, () => t(`trusted_request_${key}`));
           controls.push(input);
           label.append(input);
           fields.append(label);
@@ -541,6 +729,7 @@
           label.textContent = t("trusted_request_dwdParadeRequested");
           const select = document.createElement("select");
           select.className = "trusted-request-dwdParadeRequested";
+          select.required = true;
           for (const value of ["false", "true"]) {
             const option = document.createElement("option");
             option.value = value;
@@ -554,6 +743,9 @@
             delivery.dwdParadeRequested = select.value === "true";
             changed();
           });
+          addRequestField(label, select, () =>
+            t("trusted_request_dwdParadeRequested"),
+          );
           controls.push(select);
           label.append(select);
           fields.append(label);
@@ -569,10 +761,20 @@
       review.checked = draft.reviewed;
       review.addEventListener("change", () => {
         draft.reviewed = review.checked;
-        if (requestMode && !submitted) dirty = true;
+        review.removeAttribute("aria-invalid");
+        review.removeAttribute("aria-describedby");
+        if (requestMode && message === "trusted_award_review_required") {
+          message = "";
+          update();
+        }
+        if (requestMode) dirty = true;
       });
       const reviewText = document.createElement("span");
       reviewText.textContent = t("trusted_award_review");
+      if (requestMode) {
+        requiredMark(reviewText);
+        review.setAttribute("aria-required", "true");
+      }
       reviewLabel.append(review, reviewText);
       form.append(reviewLabel);
       controls.push(review);
@@ -590,22 +792,37 @@
           documentKind === "packet"
             ? "manual-packet-download"
             : "trusted-award-download";
-        button.textContent =
-          documentKind === "packet"
-            ? t("certificate_packet_download")
-            : t(
-                requestMode
-                  ? "trusted_request_submit"
-                  : "trusted_award_download",
-              );
+        if (requestMode) {
+          requestSubmitButton = button;
+          requestSubmitLabel = document.createElement("span");
+          const spinner = document.createElement("span");
+          spinner.className = "certificate-request-spinner";
+          spinner.setAttribute("aria-hidden", "true");
+          button.append(spinner, requestSubmitLabel);
+        } else {
+          button.textContent = t(
+            documentKind === "packet"
+              ? "certificate_packet_download"
+              : "trusted_award_download",
+          );
+        }
         button.addEventListener("click", () => generate(true, documentKind));
         button.className += " admin-work-zone-button";
         actions.append(button);
         controls.push(button);
       }
       form.append(actions);
+      if (requestMode) form.append(status);
       panel.append(summary, form);
       root.replaceChildren(panel);
+      if (requestMode) {
+        for (const { label, error } of requestFields) label.append(error);
+        validateRequestFields();
+        if (message === "trusted_award_review_required") {
+          review.setAttribute("aria-invalid", "true");
+          review.setAttribute("aria-describedby", status.id);
+        }
+      }
       update();
     }
     async function generate(
@@ -699,23 +916,34 @@
       }
     }
     async function submitRequest() {
-      if (submitted) return;
+      if (requestReceipt) return;
+      if (!requestSnapshot) {
+        validationActive = true;
+        const invalid = validateRequestFields();
+        if (invalid) {
+          message = "trusted_request_fields_required";
+          update();
+          invalid.focus();
+          return;
+        }
+      }
       if (!draft.reviewed) {
         message = "trusted_award_review_required";
         update();
+        const review = root.querySelector(".trusted-award-reviewed");
+        review.setAttribute("aria-invalid", "true");
+        review.setAttribute("aria-describedby", status.id);
+        review.focus();
         return;
       }
       const form = root.querySelector("form");
-      if (!requestSnapshot && form.reportValidity && !form.reportValidity())
-        return;
-      if (!requestSnapshot && neededByPicker && !delivery.neededByDate) {
-        neededByDateInvalid = true;
-        message = "validation_field_required";
+      if (!requestSnapshot && form.reportValidity && !form.reportValidity()) {
+        message = "trusted_request_invalid";
         update();
-        neededByPicker.trigger.focus();
         return;
       }
       if (!requestSnapshot) {
+        validationActive = false;
         requestId ||= window.crypto.randomUUID();
         requestSnapshot = JSON.parse(
           JSON.stringify({
@@ -728,27 +956,40 @@
       busy = true;
       message = "trusted_request_generating";
       update();
+      const attempt = new AbortController();
+      const abortAttempt = () => attempt.abort();
+      lifecycle.signal.addEventListener("abort", abortAttempt, { once: true });
+      let confirmationTimer;
+      let invalidField;
       try {
-        const result = await api(
-          `/api/certificate-requests/${memberRetirement ? "retirement" : "trusted-to-serve"}`,
-          {
-            method: "POST",
-            json: true,
-            body: requestSnapshot,
-            timeoutMs: null,
-            signal: lifecycle.signal,
-          },
-        );
+        const deadline = new Promise((_, reject) => {
+          confirmationTimer = setTimeout(() => {
+            attempt.abort();
+            reject(new Error("Certificate request confirmation timed out"));
+          }, REQUEST_CONFIRMATION_TIMEOUT_MS);
+        });
+        const result = await Promise.race([
+          api(
+            `/api/certificate-requests/${memberRetirement ? "retirement" : "trusted-to-serve"}`,
+            {
+              method: "POST",
+              json: true,
+              body: requestSnapshot,
+              timeoutMs: null,
+              signal: attempt.signal,
+            },
+          ),
+          deadline,
+        ]);
         if (disposed) return;
         if (
           !result?.certificateRequest?.id ||
           !result.certificateRequest.status
         )
           throw new Error("Invalid request response");
-        submitted = true;
+        requestReceipt = result.certificateRequest.id;
         dirty = false;
         requestSnapshot = undefined;
-        message = "trusted_request_success";
         // Queue refresh failures must not turn a confirmed submission into a retry.
         Promise.resolve()
           .then(() => onSubmitted?.(result.certificateRequest))
@@ -756,20 +997,33 @@
       } catch (error) {
         if (disposed) return;
         if (error.status === 403) {
-          onDenied?.();
+          message = "trusted_request_access_denied";
           return;
         }
         if (error.status === 401) {
           message = "trusted_request_session_expired";
           return;
         }
-        let code = error.data?.code;
+        let data = error.data;
         try {
-          if (error.data?.json) code = (await error.data.json())?.code;
+          if (data?.json) data = await data.json();
         } catch {
           /* Keep the retry snapshot on uncertain outcomes. */
         }
         if ([400, 422].includes(error.status)) requestSnapshot = undefined;
+        if (
+          memberRetirement &&
+          error.status === 422 &&
+          [
+            "Valid certificate decorations are required.",
+            "A certificate decoration or post-nominal is invalid",
+          ].includes(data?.error)
+        ) {
+          validationActive = rejectedPostNominals = true;
+          invalidField = validateRequestFields();
+          message = "trusted_request_fields_required";
+          return;
+        }
         message =
           {
             award_data_invalid: "trusted_award_data_invalid",
@@ -785,11 +1039,17 @@
             certificate_request_conflict: "trusted_request_conflict",
             certificate_request_idempotency_conflict:
               "trusted_request_conflict",
-          }[code] || "trusted_request_error";
+          }[data?.code] || "trusted_request_error";
       } finally {
+        clearTimeout(confirmationTimer);
+        lifecycle.signal.removeEventListener("abort", abortAttempt);
         if (!disposed) {
           busy = false;
-          update();
+          if (requestReceipt) render(true);
+          else {
+            update();
+            invalidField?.focus();
+          }
         }
       }
     }

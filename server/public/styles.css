@@ -9111,6 +9111,28 @@ html[data-theme='dark'] .legal-document th {
   visibility: hidden;
 }
 
+.event-submit-actions > .event-submit-button[aria-busy='true'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-submit-actions > .event-submit-button[aria-busy='true']::after {
+  position: static;
+  margin: 0 0 0 0.5rem;
+  flex: 0 0 auto;
+}
+
+.event-submit-actions > .event-submit-button[aria-busy='true'] > span {
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-submit-actions > .event-submit-button[aria-busy='true']::after {
+    animation: none;
+  }
+}
+
 .my-events-section {
   margin: 24px 28px 0;
   overflow: hidden;
@@ -10214,6 +10236,18 @@ a.my-event-card-row:focus-visible {
   border-left-color: #4f7358;
   background: #edf5ef;
   color: #36523d;
+}
+.event-form-message.is-info,
+.contact-message.is-info {
+  border-color: currentColor;
+  background: transparent;
+  color: inherit;
+}
+.event-form-message:empty,
+.contact-message:empty {
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 /* ─────────────────────────────────────────────

@@ -2,14 +2,16 @@ const contactForm = document.getElementById("contactForm");
 const contactMessage = document.getElementById("contactMessage");
 const contactSubmitButton = document.getElementById("contactSubmitButton");
 const contactProfileDetails = document.getElementById("contactProfileDetails");
+let contactSubmitting = false;
 
-function showContactMessage(message, type = "error") {
-  contactMessage.textContent = message;
-  contactMessage.className = `contact-message is-${type}`;
-  contactMessage.hidden = false;
+function showContactMessage(message, type = "error", target = contactMessage) {
+  target.textContent = message;
+  target.className = `contact-message is-${type}`;
+  target.hidden = false;
 }
 
 function setContactSubmitting(isSubmitting) {
+  contactSubmitting = isSubmitting;
   contactSubmitButton.disabled = isSubmitting;
   contactSubmitButton.setAttribute("aria-busy", String(isSubmitting));
   contactSubmitButton.querySelector("span").textContent = translate(
@@ -68,15 +70,20 @@ async function initializeContactForm() {
     renderContactProfile(user);
     contactForm.hidden = false;
   } catch (error) {
-    showContactMessage(error.message || translate("contact_load_error"));
+    showContactMessage(
+      error.message || translate("contact_load_error"),
+      "error",
+      document.getElementById("contactLoadMessage"),
+    );
   }
 }
 
 contactForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  contactMessage.hidden = true;
+  if (contactSubmitting) return;
 
   if (!contactForm.checkValidity()) {
+    showContactMessage(translate("contact_required_fields"));
     contactForm.reportValidity();
     return;
   }
@@ -86,6 +93,7 @@ contactForm.addEventListener("submit", async (event) => {
   if (!token) return;
 
   setContactSubmitting(true);
+  showContactMessage(translate("contact_sending"), "info");
   try {
     const response = await CMCENUtils.apiJson("/api/contact", {
       method: "POST",
@@ -97,13 +105,18 @@ contactForm.addEventListener("submit", async (event) => {
       redirectOnUnauthorized: redirect,
       unauthorizedMessage: translate("contact_login_required"),
     });
+    if (typeof response?.message !== "string" || !response.message.trim()) {
+      showContactMessage(translate("contact_send_uncertain"));
+      return;
+    }
     contactForm.reset();
-    showContactMessage(
-      response.message || translate("contact_success"),
-      "success",
-    );
+    showContactMessage(translate("contact_success"), "success");
   } catch (error) {
-    showContactMessage(error.message || translate("contact_send_error"));
+    showContactMessage(
+      error.isNetworkError || error.status === 502
+        ? translate("contact_send_uncertain")
+        : error.message || translate("contact_send_error"),
+    );
   } finally {
     setContactSubmitting(false);
   }

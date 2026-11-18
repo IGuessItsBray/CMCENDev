@@ -1,5 +1,6 @@
 const eventForm = document.getElementById("eventForm");
 const eventPageMessage = document.getElementById("eventPageMessage");
+const eventFormMessage = document.getElementById("eventFormMessage");
 const eventEditLoading = document.getElementById("eventEditLoading");
 const eventEditContext = document.getElementById("eventEditContext");
 const eventEditRejection = document.getElementById("eventEditRejection");
@@ -84,7 +85,7 @@ function showPageMessage(message, type = "error") {
 }
 
 function clearFormMessage() {
-  // Form results are presented as transient toasts.
+  eventFormMessage.textContent = "";
 }
 
 function syncEventTitleValidation({
@@ -112,11 +113,8 @@ function syncEventTitleValidation({
 }
 
 function showFormMessage(message, type = "error") {
-  CMCENUtils.showToast(message, {
-    color: type === "success" ? "success" : type === "info" ? "info" : "error",
-    position: "bottom-right",
-    animation: "slide",
-  });
+  eventFormMessage.className = `event-form-message is-${type}`;
+  eventFormMessage.textContent = message;
 }
 
 function setSubmitting(submitting) {
@@ -125,18 +123,6 @@ function setSubmitting(submitting) {
   eventSubmitButton.disabled = submitting;
   eventSubmitButton.setAttribute("aria-busy", String(submitting));
   updateEventFormModeText();
-  eventSubmitButton.setAttribute(
-    "aria-label",
-    translate(
-      submitting
-        ? "event_submitting"
-        : editingEventId
-          ? personalSubmission
-            ? "my_submissions_resubmit"
-            : "save_event_changes"
-          : "submit_event_button",
-    ),
-  );
 }
 
 function syncScheduleFields() {
@@ -503,9 +489,13 @@ eventForm.addEventListener("submit", async (event) => {
   }
 
   setSubmitting(true);
+  showFormMessage(translate("event_submitting"), "info");
 
   try {
-    if (!(await eventProfileNotice.check({ focus: true }))) return;
+    if (!(await eventProfileNotice.check({ focus: true }))) {
+      clearFormMessage();
+      return;
+    }
     const wasEditing = Boolean(editingEventId);
     const requestUrl = wasEditing
       ? `/api/events/${encodeURIComponent(editingEventId)}`
@@ -521,6 +511,10 @@ eventForm.addEventListener("submit", async (event) => {
 
     if (wasEditing) {
       finishEditingEvent();
+      showPageMessage(
+        data.message || translate("event_update_success"),
+        "success",
+      );
     } else {
       resetEventForm();
 
@@ -804,21 +798,13 @@ function updateEventFormModeText() {
   cancelEventEditing.disabled = isSubmitting;
   updateEventPageHeader();
   eventSubmitButtonLabel.textContent = translate(
-    isEditing
-      ? personalSubmission
-        ? "my_submissions_resubmit"
-        : "save_event_changes"
-      : "submit_event_button",
-  );
-  eventSubmitButton.setAttribute(
-    "aria-label",
-    translate(
-      isEditing
+    isSubmitting
+      ? "event_submitting"
+      : isEditing
         ? personalSubmission
           ? "my_submissions_resubmit"
           : "save_event_changes"
         : "submit_event_button",
-    ),
   );
 }
 

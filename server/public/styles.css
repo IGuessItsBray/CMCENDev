@@ -16202,9 +16202,7 @@ html[data-theme='dark']
   .header-identity-row .header-inner {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      'identity language menu'
-      'donate donate donate';
+    grid-template-areas: 'identity language menu';
     align-items: center;
     gap: 10px;
     padding-block: 10px;
@@ -16233,9 +16231,10 @@ html[data-theme='dark']
     grid-area: menu;
   }
 
-  .donate-link {
-    grid-area: donate;
-    width: 100%;
+  .header-navigation-inner > .donate-link {
+    flex: none;
+    width: auto;
+    margin: 10px 14px;
     min-width: 0;
   }
 
@@ -16734,6 +16733,13 @@ html[data-theme='dark'] .content-workspace-shortcut:focus-visible {
 
   .identity-acronym {
     font-size: 18px;
+  }
+}
+
+@media (max-width: 350px) {
+  /* Leave room between the wordmark and the two mobile header controls. */
+  .identity-acronym {
+    font-size: clamp(16px, calc(6.667vw - 5.333px), 18px);
   }
 }
 
@@ -19908,9 +19914,7 @@ html[data-theme='dark'] .analytics-meter::before {
 @media (max-width: 700px) {
   .header-identity-row .header-inner {
     grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      'identity language menu'
-      'donate donate donate';
+    grid-template-areas: 'identity language menu';
   }
 
   .header-account-controls {

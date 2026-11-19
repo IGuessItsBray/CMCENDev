@@ -401,9 +401,17 @@
     }
   }
 
-  function appendTimers(timers, screenPosition, header) {
-    const root = document.createElement("div");
+  function appendTimers(timers, screenPosition, header, wasOpen = false) {
+    const grouped = screenPosition === "mobile" && timers.length > 1;
+    const root = document.createElement(grouped ? "details" : "div");
     root.className = "site-timers";
+    if (grouped) {
+      const summary = document.createElement("summary");
+      summary.textContent =
+        CMCENUtils.getCurrentLanguage() === "fr" ? "Avis du site" : "Site notices";
+      root.open = wasOpen;
+      root.append(summary);
+    }
     root.classList.toggle(
       "site-timers-below-header",
       screenPosition === "below-header",
@@ -425,6 +433,8 @@
       if (!root.querySelector(".site-timer")) {
         root.remove();
         timersRoots = timersRoots.filter((timerRoot) => timerRoot !== root);
+      } else if (grouped) {
+        root.querySelector("summary").focus();
       }
 
       if (!hasVisibleCountdown()) {
@@ -436,7 +446,7 @@
 
     if (!header) {
       document.body.prepend(root);
-    } else if (screenPosition === "below-header") {
+    } else if (screenPosition === "below-header" || screenPosition === "mobile") {
       header.insertAdjacentElement("afterend", root);
     } else {
       header.prepend(root);
@@ -446,6 +456,7 @@
   }
 
   function renderTimers() {
+    const wasOpen = timersRoots.some((root) => root.open);
     clearTimers();
 
     const visibleTimers = activeTimers.filter(
@@ -462,12 +473,19 @@
       (timer) => timer.screenPosition === "below-header",
     );
 
-    if (headerTimers.length) {
-      timersRoots.push(appendTimers(headerTimers, "header", header));
-    }
-
-    if (belowHeaderTimers.length) {
-      timersRoots.push(appendTimers(belowHeaderTimers, "below-header", header));
+    if (mobileLayout?.matches) {
+      // Keep notices out of the sticky masthead on phones. A lone notice
+      // remains visible; a stack can be opened in full without persistent dismissal.
+      timersRoots.push(
+        appendTimers([...headerTimers, ...belowHeaderTimers], "mobile", header, wasOpen),
+      );
+    } else {
+      if (headerTimers.length) {
+        timersRoots.push(appendTimers(headerTimers, "header", header));
+      }
+      if (belowHeaderTimers.length) {
+        timersRoots.push(appendTimers(belowHeaderTimers, "below-header", header));
+      }
     }
 
     updateHeaderOffset();
@@ -503,6 +521,9 @@
     updateCountdowns,
   });
   if (document.currentScript?.hasAttribute("data-render-only")) return;
+
+  const mobileLayout = window.matchMedia?.("(max-width: 700px)");
+  mobileLayout?.addEventListener("change", renderTimers);
 
   window.CMCENTimers = {
     reload: loadTimers,

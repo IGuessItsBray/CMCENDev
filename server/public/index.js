@@ -529,6 +529,14 @@ function loadHeader() {
 
   const mobileMenuToggle = document.getElementById("mobileMenuToggle");
   const primaryNavigation = document.getElementById("primaryNavigation");
+  const donateLink = header.querySelector(".donate-link");
+  const mobileLayout = window.matchMedia("(max-width: 700px)");
+  function placeDonateLink() {
+    const nextControl = mobileLayout.matches ? primaryNavigation : mobileMenuToggle;
+    nextControl.before(donateLink);
+  }
+  placeDonateLink();
+  mobileLayout.addEventListener("change", placeDonateLink, { signal });
   const headerSearchForm = header.querySelector(".header-search");
   const headerSearchInput = document.getElementById("headerSearchInput");
 

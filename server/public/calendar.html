@@ -19,7 +19,9 @@
       <section class="calendar-container">
         <header class="calendar-heading">
           <div class="calendar-heading-copy">
-            <p class="calendar-kicker" data-i18n="calendar_kicker"></p>
+            <div class="calendar-heading-topline">
+              <p class="calendar-kicker" data-i18n="calendar_kicker"></p>
+            </div>
             <h1 data-i18n="calendar_title"></h1>
           </div>
           <div class="calendar-submit-callout">
@@ -35,6 +37,10 @@
         >
           Loading events...
         </p>
+
+        <details class="calendar-filter-disclosure" hidden>
+          <summary data-i18n="calendar_filters_download">Filters and download</summary>
+        </details>
 
         <section
           class="calendar-tools"

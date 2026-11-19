@@ -427,15 +427,6 @@ function downloadCalendarIcs() {
   });
 }
 
-function formatMonthHeading(event, locale) {
-  return CMCENUtils.formatDate(event.startDate, {
-    locale,
-    month: "long",
-    year: "numeric",
-    ...getEventTimeZoneOptions(event),
-  });
-}
-
 function formatMonthAbbreviation(event, locale) {
   return CMCENUtils.formatDate(event.startDate, {
     locale,
@@ -1087,13 +1078,6 @@ function renderAgenda(language, locale) {
   );
 
   if (!agendaEvents.length) {
-    const emptyMonth = document.createElement("section");
-    emptyMonth.className = "calendar-month";
-
-    const monthTitle = document.createElement("h3");
-    monthTitle.className = "calendar-month-title";
-    monthTitle.textContent = formatCalendarMonth(displayedMonth, locale);
-
     const emptyCard = document.createElement("div");
     emptyCard.className = "calendar-event calendar-event-empty";
 
@@ -1108,35 +1092,12 @@ function renderAgenda(language, locale) {
 
     emptyContent.append(emptyTitle);
     emptyCard.append(emptyContent);
-    emptyMonth.append(monthTitle, emptyCard);
-    eventListElement.append(emptyMonth);
+    eventListElement.append(emptyCard);
     return;
   }
 
-  let currentMonthKey = null;
-  let currentMonthGroup = null;
-
   agendaEvents.forEach((event) => {
-    const monthKey = getMonthKey(event);
-
-    if (monthKey !== currentMonthKey) {
-      currentMonthKey = monthKey;
-      currentMonthGroup = document.createElement("section");
-
-      currentMonthGroup.className = "calendar-month";
-
-      const heading = document.createElement("h3");
-
-      heading.className = "calendar-month-title";
-      heading.textContent = formatMonthHeading(event, locale);
-
-      currentMonthGroup.appendChild(heading);
-      eventListElement.appendChild(currentMonthGroup);
-    }
-
-    currentMonthGroup.appendChild(
-      createAgendaEventCard(event, language, locale),
-    );
+    eventListElement.append(createAgendaEventCard(event, language, locale));
   });
 }
 
@@ -1315,4 +1276,29 @@ calendarDownloadButton.addEventListener("click", downloadCalendarIcs);
 document.addEventListener("languagechange", renderCalendar);
 
 readCalendarUrl();
+
+// Move the existing controls, rather than duplicating inputs or presenting a
+// different keyboard order from the visual order at either breakpoint.
+const narrowCalendar = window.matchMedia("(max-width: 700px)");
+const calendarControls = document.querySelector(".calendar-controls");
+const calendarTools = document.querySelector(".calendar-tools");
+const filterDisclosure = document.querySelector(".calendar-filter-disclosure");
+const calendarHeading = document.querySelector(".calendar-heading");
+const calendarHeadingTopline = document.querySelector(".calendar-heading-topline");
+const calendarSubmitCallout = document.querySelector(".calendar-submit-callout");
+filterDisclosure.open = hasCalendarFilters();
+function placeCalendarControls() {
+  filterDisclosure.hidden = !narrowCalendar.matches;
+  if (narrowCalendar.matches) {
+    calendarHeadingTopline.append(calendarSubmitCallout);
+    calendarHeading.append(calendarControls);
+    filterDisclosure.append(calendarTools);
+  } else {
+    calendarHeading.append(calendarSubmitCallout);
+    document.querySelector(".calendar-view").prepend(calendarControls);
+    filterDisclosure.after(calendarTools);
+  }
+}
+placeCalendarControls();
+narrowCalendar.addEventListener("change", placeCalendarControls);
 loadEvents();

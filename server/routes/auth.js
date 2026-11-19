@@ -1826,7 +1826,7 @@ router.patch('/profile', authMiddleware, async (req, res) => {
 });
 
 // GET /api/contributor-check
-// Confirm the current user has contributor-level access or higher.
+// Confirm the current user can submit community content for review.
 router.get(
   '/contributor-check',
   authMiddleware,

@@ -279,7 +279,7 @@ Event, retirement, and Last Post correction forms also send `submitForReview: tr
 | `POST`   | `/api/ghost/upgrade`                                    | Authenticated                                                    | Upgrade/merge a ghost account into the current authenticated account.                                                                                                                                                                                 |
 | `PATCH`  | `/api/profile`                                          | Authenticated                                                    | Update the caller's editable profile fields. `currentUnit` accepts 256 characters; optional `biography` accepts 10,000 plain-text characters; `websiteUrl` and `socialLinks.facebook` accept HTTP(S) URLs without embedded credentials, up to 2,048 characters, or empty strings to clear. These fields are returned by `/api/me` but are not public. |
 | `DELETE` | `/api/profile`                                          | Authenticated + `canDeleteOwnAccount` + current MFA confirmation | Delete the current account; associated content is retained and anonymized. Accepts a current TOTP code or a passkey assertion verified within the prior five minutes.                                                                                 |
-| `GET`    | `/api/contributor-check`                                | Authenticated + `canCreateDrafts`                                | Confirm contributor content access.                                                                                                                                                                                                                   |
+| `GET`    | `/api/contributor-check`                                | Authenticated + `canCreateDrafts`                                | Confirm community content submission access.                                                                                                                                                                                                                   |
 | `GET`    | `/api/admin-check`                                      | Authenticated + user admin access                                | Confirm admin user-management access.                                                                                                                                                                                                                 |
 
 ## Contact
@@ -652,7 +652,7 @@ characters uses `Recipient` rather than disappearing from the filename.
 
 `POST /api/certificate-requests/trusted-to-serve` and
 `POST /api/certificate-requests/retirement` require authentication and
-`canSubmitCertificateRequests` (`certificates.submit`). Ghost and contributor
+`canSubmitCertificateRequests` (`certificates.submit`). Ghost and subscriber
 or higher roles receive it by default; custom roles can grant it independently
 of queue management. The `/certificates` page offers both request types.
 

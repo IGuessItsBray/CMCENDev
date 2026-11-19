@@ -594,7 +594,7 @@ paths:
       tags: [Certificates]
       operationId: submitStandaloneRetirementCertificateRequest
       summary: Submit retirement certificates for printing and mailing without a retirement message.
-      description: Requires certificates.submit. Stores authenticated profile contact, member service details and family recipients in a pending request. Per-user UUID idempotency spans both certificate types. No publication or email. Uses existing retirement rank, decorations, date and family wording validation. Combined member full name is limited to 160 characters.
+      description: Requires certificates.submit (ghost or subscriber and above by default; custom grants supported). Stores authenticated profile contact, member service details and family recipients in a pending request. Per-user UUID idempotency spans both certificate types. No publication or email. Uses existing retirement rank, decorations, date and family wording validation. Combined member full name is limited to 160 characters.
       x-permission: canSubmitCertificateRequests
       requestBody:
         required: true
@@ -652,7 +652,7 @@ paths:
       tags: [Certificates]
       operationId: submitTrustedToServeRequest
       summary: Submit a Trusted to Serve print and mail request.
-      description: Requires certificates.submit (ghost or contributor and above by default; custom grants supported). Contact details come only from the authenticated profile. Creates a pending request, not an award approval or email. Per-user requestId retries with the same normalized payload return the original record; different content returns 409. Profile name, email and unit/company are required. No mailing or printing happens on submission.
+      description: Requires certificates.submit (ghost or subscriber and above by default; custom grants supported). Contact details come only from the authenticated profile. Creates a pending request, not an award approval or email. Per-user requestId retries with the same normalized payload return the original record; different content returns 409. Profile name, email and unit/company are required. No mailing or printing happens on submission.
       x-permission: canSubmitCertificateRequests
       requestBody:
         required: true
@@ -1745,7 +1745,7 @@ paths:
   /api/contributor-check:
     get:
       tags: [Auth]
-      summary: Confirm contributor access.
+      summary: Confirm community content submission access.
       x-permission: canCreateDrafts
       responses:
         "200":

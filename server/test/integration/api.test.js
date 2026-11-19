@@ -80,6 +80,37 @@ describe('staff content audit coverage', () => {
     publicationPermissionConfirmed: true,
   });
 
+  test('default Subscribers can submit for review without gaining staff access', async () => {
+    const subscriber = await createUser({ role: 'subscriber' });
+    const auth = tokenFor(subscriber);
+    const profile = await request(app).get('/api/me').set('Authorization', auth).expect(200);
+    assert.equal(profile.body.permissions.canCreateDrafts, true);
+    assert.equal(profile.body.permissions.canSubmitRetirementMessages, true);
+    assert.equal(profile.body.permissions.canUploadMedia, false);
+    assert.equal(profile.body.permissions.canReviewAndPublish, false);
+
+    for (const [type, Model, endpoint, payload] of [
+      ['event', Event, '/api/events', eventPayload],
+      ['retirementMessage', RetirementMessage, '/api/retirement-messages', retirementPayload],
+      ['lastPost', LastPostMessage, '/api/last-posts', lastPostPayload],
+    ]) {
+      await request(app).post(endpoint).send(payload()).expect(401);
+      await request(app).post(endpoint).set('Authorization', auth)
+        .send({ ...payload(), publishNow: true }).expect(403);
+      await request(app).post(endpoint).set('Authorization', auth).send(payload()).expect(201);
+      const rows = await Model.find({ createdBy: subscriber._id }).lean();
+      assert.equal(rows.length, 1);
+      const [record] = rows;
+      assert.equal(record.status, 'pending');
+      await request(app).get(`${endpoint}/mine`).set('Authorization', auth).expect(200);
+      const detail = await request(app).get(`/api/my-submissions/${type}/${record._id}`)
+        .set('Authorization', auth).expect(200);
+      assert.ok(detail.body.item.editUrl);
+      await request(app).patch(`${endpoint}/${record._id}/review`)
+        .set('Authorization', auth).send({ action: 'publish' }).expect(403);
+    }
+  });
+
   test('records hide and restore exactly once with actor, target, reason and both statuses for every post type', async () => {
     const staff = await createUser({ role: 'administrator' });
     const member = await createUser();
@@ -4734,13 +4765,10 @@ describe('optional submitter organization', () => {
   }
 
   test('optional organization does not bypass authentication, permissions, or other required profile fields', async () => {
-    const subscriber = await createUser({ currentUnit: '', company: '' });
     const contributor = await createUser({ role: 'contributor', currentUnit: '', company: '' });
-    const subscriberAuth = bearer((await login(subscriber)).body.token);
     const auth = bearer((await login(contributor)).body.token);
     for (const [endpoint, payload] of [['/api/retirement-messages', retirementPayload], ['/api/events', eventPayload]]) {
       await request(app).post(endpoint).send(payload()).expect(401);
-      await request(app).post(endpoint).set('Authorization', subscriberAuth).send(payload()).expect(403);
       for (const field of ['firstName', 'lastName', 'email', ...(endpoint === '/api/events' ? ['rank'] : [])]) {
         await User.collection.updateOne({ _id: contributor._id }, { $set: { [field]: '' } });
         const response = await request(app).post(endpoint).set('Authorization', auth).send(payload()).expect(400);
@@ -5135,11 +5163,23 @@ describe('retirement message lifecycle', () => {
     const subscriberLogin = await login(subscriber);
     const contributorLogin = await login(contributor);
 
-    await request(app)
+    const subscriberAuth = bearer(subscriberLogin.body.token);
+    const subscriberSubmission = await request(app)
       .post('/api/retirement-messages')
-      .set('Authorization', bearer(subscriberLogin.body.token))
+      .set('Authorization', subscriberAuth)
       .send(retirementPayload())
+      .expect(201);
+    assert.equal(subscriberSubmission.body.status, 'pending');
+    const subscriberMessageId = subscriberSubmission.body.retirementMessage._id;
+    await request(app)
+      .patch(`/api/retirement-messages/${subscriberMessageId}/review`)
+      .set('Authorization', subscriberAuth)
+      .send({ action: 'publish' })
       .expect(403);
+    assert.equal(
+      (await RetirementMessage.findById(subscriberMessageId)).status,
+      'pending',
+    );
 
     const submitted = await request(app)
       .post('/api/retirement-messages')
@@ -5148,7 +5188,9 @@ describe('retirement message lifecycle', () => {
       .expect(201);
     assert.equal(submitted.body.status, 'pending');
 
-    const message = await RetirementMessage.findOne().lean();
+    const message = await RetirementMessage.findById(
+      submitted.body.retirementMessage._id,
+    ).lean();
     assert.equal(message.submitter.firstName, contributor.firstName);
     assert.equal(message.submitter.lastName, contributor.lastName);
     assert.equal(message.submitter.email, contributor.email);

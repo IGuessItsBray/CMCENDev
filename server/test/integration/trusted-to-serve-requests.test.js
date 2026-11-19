@@ -395,7 +395,7 @@ test('retirement permissions, field validation, profile safety and cross-type co
     .post(`${base}/retirement`)
     .send(retirementPayload())
     .expect(401);
-  await postRetirement(retirementPayload(), 'subscriber').expect(403);
+  await postRetirement(retirementPayload(), 'subscriber').expect(201);
   await postRetirement(retirementPayload(), 'custom').expect(201);
   await postRetirement(retirementPayload(), 'incomplete').expect(422);
   for (const change of [
@@ -439,10 +439,11 @@ test('retirement permissions, field validation, profile safety and cross-type co
     .set('Authorization', `Bearer ${tokens.contributor}`)
     .expect(200);
   assert.ok(options.body.wordings.length);
-  await request(app)
+  const subscriberOptions = await request(app)
     .get(`${base}/options`)
     .set('Authorization', `Bearer ${tokens.subscriber}`)
-    .expect(403);
+    .expect(200);
+  assert.deepEqual(subscriberOptions.body, options.body);
 });
 
 test('authentication and separate built-in/custom submit permissions protect private worklist', async () => {
@@ -450,9 +451,23 @@ test('authentication and separate built-in/custom submit permissions protect pri
     .post(`${base}/trusted-to-serve`)
     .send(payload())
     .expect(401);
-  await post(payload(), 'subscriber').expect(403);
+  const result = await post(payload(), 'subscriber').expect(201);
+  const id = result.body.certificateRequest.id;
+  const saved = await CertificateRequest.findById(id).lean();
+  assert.equal(String(saved.createdBy), String(users.subscriber));
+  assert.equal(saved.status, 'pending');
   for (const role of ['contributor', 'editor', 'ghost', 'custom'])
     await post(payload(), role).expect(201);
+  const subscriberAuth = {
+    Authorization: `Bearer ${tokens.subscriber}`,
+  };
+  for (const path of [base, `${base}/count`, `${base}/${id}/member.pdf`])
+    await request(app).get(path).set(subscriberAuth).expect(403);
+  await request(app)
+    .patch(`${base}/${id}/fulfillment`)
+    .set(subscriberAuth)
+    .send({ printed: true })
+    .expect(403);
   await request(app)
     .get(base)
     .set('Authorization', `Bearer ${tokens.contributor}`)

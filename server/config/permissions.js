@@ -351,13 +351,13 @@ function getBuiltInPermissionFlags(user) {
     canVerifyArchive: false,
     canAccessConnections: hasMinimumRole(role, 'subscriber'),
 
-    canCreateDrafts: isGhost || hasMinimumRole(role, 'contributor'),
+    canCreateDrafts: isGhost || hasMinimumRole(role, 'subscriber'),
 
     canManageNews: hasMinimumRole(role, 'editor'),
 
-    canSubmitRetirementMessages: isGhost || hasMinimumRole(role, 'contributor'),
+    canSubmitRetirementMessages: isGhost || hasMinimumRole(role, 'subscriber'),
     canSubmitCertificateRequests:
-      isGhost || hasMinimumRole(role, 'contributor'),
+      isGhost || hasMinimumRole(role, 'subscriber'),
 
     canManageCertificateRequests: hasMinimumRole(role, 'editor'),
 

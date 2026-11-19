@@ -24,7 +24,7 @@ that acknowledgement. Staff open the downloaded PDF to check and print it.
 Branch staff enter approved recipient details.
 The `/certificates` page lets signed-in users with `certificates.submit` submit
 either retirement or Trusted to Serve print/mail requests. The permission is
-granted to ghost and contributor-or-higher roles and can be granted by custom
+granted to ghost and subscriber-or-higher roles and can be granted by custom
 roles. It does not grant queue access. The existing `certificates.manage`
 permission still protects private delivery details, staff generation and
 fulfillment. No award controls appear on public retirement listings or messages.

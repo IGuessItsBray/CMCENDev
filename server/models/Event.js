@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 const { publicationDateFields } = require('../services/publication-date');
+const eventOrganizer = require('../public/event-organizer');
 
 const {
   CONTENT_STATUSES,
-  EVENT_ORGANIZING_ENTITIES,
   EVENT_TYPES,
   CANADIAN_REGIONS,
   CANADIAN_TIMEZONES,
@@ -170,7 +170,12 @@ const EventSchema = new mongoose.Schema(
 
     organizingEntity: {
       type: String,
-      enum: [...EVENT_ORGANIZING_ENTITIES, ''],
+      trim: true,
+      maxlength: eventOrganizer.maxLength,
+      validate: {
+        validator: (value) => eventOrganizer.isValid(value, { allowEmpty: true }),
+        message: 'Organizing entity must be plain text',
+      },
       default: '',
     },
 

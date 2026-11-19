@@ -6377,6 +6377,43 @@ describe('authorization matrix and account integrity', () => {
 });
 
 describe('event, page, and comment workflows', () => {
+  test('event organizers round-trip as safe plain text through member and staff edits', async () => {
+    const member = await createUser({ role: 'subscriber' });
+    const editor = await createUser({ role: 'editor' });
+    const session = require('../../services/auth-session').createSessionToken;
+    const memberToken = bearer(session(member));
+    const editorToken = bearer(session(editor));
+    const body = eventPayload({ organizingEntity: '  CAFCYBERCOM  ' });
+    const send = (method, url, token, payload, status) =>
+      request(app)[method](url)
+        .set('Authorization', token).send(payload).expect(status);
+
+    for (const name of ['', '__other__', 'a'.repeat(101), '<b>Invalid</b>', 'Name\nLine', {}]) {
+      await send('post', '/api/events', memberToken, { ...body, organizingEntity: name }, 400);
+    }
+    const created = await send('post', '/api/events', memberToken, body, 201);
+    const id = created.body.event._id;
+    const url = `/api/events/${id}`;
+    const readDraft = async (token) =>
+      (await request(app).get(`${url}/edit`).set('Authorization', token).expect(200)).body.event;
+    assert.equal((await readDraft(memberToken)).organizingEntity, 'CAFCYBERCOM');
+
+    await send('patch', url, memberToken, { ...body, organizingEntity: '  Groupe d’opérations  ' }, 200);
+    assert.equal((await readDraft(editorToken)).organizingEntity, 'Groupe d’opérations');
+    await send('patch', url, memberToken, { ...body, organizingEntity: '<b>Invalid</b>' }, 400);
+    await send('patch', `/api/admin/events/${id}`, editorToken, { organizingEntity: 'CAFCYBERCOM' }, 200);
+    await send('patch', `/api/admin/events/${id}`, editorToken, { organizingEntity: 'Name\nLine' }, 400);
+    await send('patch', `${url}/review`, editorToken, { action: 'publish' }, 200);
+    assert.equal((await request(app).get(url).expect(200)).body.event.organizingEntity, 'CAFCYBERCOM');
+    const publicList = await request(app).get('/api/events').expect(200);
+    assert.equal(publicList.body.events.find((event) => event._id === id).organizingEntity, 'CAFCYBERCOM');
+
+    await send('patch', `/api/admin/events/${id}`, editorToken, { organizingEntity: 'museum' }, 200);
+    assert.equal((await request(app).get(url).expect(200)).body.event.organizingEntity, 'museum');
+    const staffCreated = await send('post', '/api/events', editorToken, body, 201);
+    assert.equal(staffCreated.body.event.organizingEntity, 'CAFCYBERCOM');
+  });
+
   test('submits, reviews, and publicly returns a bilingual event', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });

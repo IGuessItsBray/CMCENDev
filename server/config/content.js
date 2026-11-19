@@ -7,12 +7,7 @@ const CONTENT_STATUSES = Object.freeze([
   'hidden',
 ]);
 
-const EVENT_ORGANIZING_ENTITIES = Object.freeze([
-  'branch',
-  'association',
-  'foundation',
-  'museum',
-]);
+const { presets: EVENT_ORGANIZING_ENTITIES } = require('../public/event-organizer');
 
 const EVENT_TYPES = Object.freeze([
   'conference',

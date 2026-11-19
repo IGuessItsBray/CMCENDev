@@ -20,6 +20,7 @@ const { hasText, requiresTextForSave } = require('../services/save-validation');
 const Role = require('../models/Role');
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
+const eventOrganizer = require('../public/event-organizer');
 const EventRsvp = require('../models/EventRsvp');
 const { cancelUpcomingAccountRsvps } = require('../services/event-rsvp-cancellation');
 const LastPostMessage = require('../models/LastPostMessage');
@@ -5264,6 +5265,11 @@ router.patch(
             changedFields,
           );
           if (localizedError) return localizedError;
+          if (
+            Object.hasOwn(body, 'organizingEntity') &&
+            !eventOrganizer.isValid(body.organizingEntity, { allowEmpty: true })
+          )
+            return 'The selected organizing entity is invalid';
           const stringError = applyAdminStringFields(
             event,
             body,

@@ -5,6 +5,7 @@ const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const Event = require('../models/Event');
 const EventRsvp = require('../models/EventRsvp');
+const eventOrganizer = require('../public/event-organizer');
 const User = require('../models/User');
 const { cancelEventRsvp } = require('../services/event-rsvp-cancellation');
 const {
@@ -754,7 +755,7 @@ router.post(
         });
       }
 
-      if (!isAllowedOption(cleanOrganizingEntity, EVENT_ORGANIZING_ENTITIES)) {
+      if (!eventOrganizer.isValid(organizingEntity)) {
         return res.status(400).json({
           error: 'The selected organizing entity is invalid',
         });
@@ -1421,7 +1422,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 
     if (
       !isAllowedOption(provinceRegion, CANADIAN_REGIONS) ||
-      !isAllowedOption(organizingEntity, EVENT_ORGANIZING_ENTITIES) ||
+      !eventOrganizer.isValid(organizingEntity) ||
       !isAllowedOption(eventType, EVENT_TYPES) ||
       (!isAllDay && !isAllowedOption(timezone, CANADIAN_TIMEZONES))
     ) {
@@ -1502,7 +1503,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 
     event.city = cleanString(city);
     event.provinceRegion = provinceRegion;
-    event.organizingEntity = organizingEntity;
+    event.organizingEntity = organizingEntity.trim();
     event.eventType = eventType;
     event.timezone = isAllDay ? '' : timezone;
 

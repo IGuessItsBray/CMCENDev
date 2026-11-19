@@ -1,6 +1,7 @@
 const { categories, plainText } = require('../public/newsletter-format');
 const { normalizeBlocks, preserveNewsletterBlocks } = require('./newsletter-content');
-const { EVENT_ORGANIZING_ENTITIES, EVENT_TYPES } = require('../config/content');
+const { EVENT_TYPES } = require('../config/content');
+const eventOrganizer = require('../public/event-organizer');
 
 const SOURCE = 'https://cmcen-rcmce.ca';
 const CHECK_KEYS = Object.freeze([
@@ -145,7 +146,7 @@ function validateField(kind, raw, maximum, documentLibrary) {
     throw new Error('Invalid category');
   if (
     kind === 'organizingEntity' &&
-    !['', ...EVENT_ORGANIZING_ENTITIES].includes(value)
+    !eventOrganizer.isValid(raw, { allowEmpty: true })
   )
     throw new Error('Invalid organizing entity');
   if (kind === 'eventType' && !['', ...EVENT_TYPES].includes(value))

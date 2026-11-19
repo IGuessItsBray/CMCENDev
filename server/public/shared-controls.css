@@ -971,3 +971,7 @@ html[data-theme='dark'] .cmcen-date-time-year-toggle {
   font: inherit;
   font-weight: 800;
 }
+
+[data-event-organizer-custom][hidden] {
+  display: none;
+}

@@ -151,18 +151,28 @@ window.MySubmissionEditor = (() => {
           "region_",
         ),
       });
-      field(
+      const organizer = window.CMCENEventOrganizer;
+      const organizerSelect = field(
         "organizingEntity",
         "event_organizing_entity",
-        record.organizingEntity,
+        organizer.initial(record.organizingEntity),
         {
           required: true,
-          options: options(
-            ["branch", "association", "foundation", "museum"],
-            "entity_",
-          ),
+          options: [
+            ["", "event_select_option"],
+            ...options(organizer.presets, "entity_"),
+            [organizer.other, "event_organizing_entity_other"],
+          ],
         },
       );
+      const organizerName = field(
+        "customOrganizingEntity",
+        "event_organizing_entity_name",
+        "",
+      );
+      organizerName.parentElement.dataset.eventOrganizerCustom = "";
+      organizer.bind(organizerSelect, organizerName, organizerName.parentElement, t)
+        .set(record.organizingEntity);
       field("eventType", "event_type", record.eventType, {
         required: true,
         options: options(
@@ -423,13 +433,17 @@ window.MySubmissionEditor = (() => {
         for (const name of [
           "city",
           "provinceRegion",
-          "organizingEntity",
           "eventType",
           "timezone",
           "startDate",
           "endDate",
         ])
           body[name] = val(name);
+        body.organizingEntity = window.CMCENEventOrganizer.resolve(
+          val("organizingEntity"),
+          val("customOrganizingEntity"),
+          t,
+        );
         return {
           ...body,
           allDay: checked("allDay"),

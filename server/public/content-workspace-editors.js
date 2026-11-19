@@ -524,6 +524,32 @@ window.ContentWorkspaceEditors = {
       const timeHint = document.createElement("p");
       timeHint.style.gridColumn = "1 / -1";
       setWorkspaceTranslatedText(timeHint, "event_time_zone_hint", "Enter dates and times in the selected event timezone. All-day events keep their calendar dates.");
+      const organizer = window.CMCENEventOrganizer;
+      const organizerField = createWorkspaceEditorField({
+        field: "organizingEntity",
+        label: "Organizing entity",
+        labelKey: "event_organizing_entity",
+        value: organizer.initial(item.content?.organizingEntity),
+        options: [
+          getWorkspaceOption("", "event_select_option", "Select an option"),
+          ...organizer.presets.map((value) =>
+            getWorkspaceOption(value, `entity_${value}`, value),
+          ),
+          getWorkspaceOption(organizer.other, "event_organizing_entity_other", "Other"),
+        ],
+      });
+      const organizerName = createWorkspaceEditorField({
+        field: "customOrganizingEntity",
+        label: "Name of organizing entity",
+        labelKey: "event_organizing_entity_name",
+      });
+      organizerName.dataset.eventOrganizerCustom = "";
+      organizer.bind(
+        organizerField.querySelector("select"),
+        organizerName.querySelector("input"),
+        organizerName,
+        (key) => getText(key, "Enter an organizing entity name in plain text (up to 100 characters)."),
+      ).set(item.content?.organizingEntity);
       return [
         timeHint,
         createWorkspaceEditorField({
@@ -559,18 +585,8 @@ window.ContentWorkspaceEditors = {
             ),
           ],
         }),
-        createWorkspaceEditorField({
-          field: "organizingEntity",
-          label: "Organizing entity",
-          labelKey: "event_organizing_entity",
-          value: item.content?.organizingEntity,
-          options: [
-            getWorkspaceOption("", "event_select_option", "Select an option"),
-            ...["branch", "association", "foundation", "museum"].map((value) =>
-              getWorkspaceOption(value, `entity_${value}`, value),
-            ),
-          ],
-        }),
+        organizerField,
+        organizerName,
         createWorkspaceEditorField({
           field: "eventType",
           label: "Event type",
@@ -1874,7 +1890,11 @@ window.ContentWorkspaceEditors = {
         return {
           city: String(formData.get("city") || ""),
           provinceRegion: String(formData.get("provinceRegion") || ""),
-          organizingEntity: String(formData.get("organizingEntity") || ""),
+          organizingEntity: window.CMCENEventOrganizer.resolve(
+            formData.get("organizingEntity"),
+            formData.get("customOrganizingEntity"),
+            (key) => getText(key, "Enter an organizing entity name in plain text (up to 100 characters)."),
+          ),
           eventType: String(formData.get("eventType") || ""),
           startDate: eventDate("startDate"),
           endDate: eventDate("endDate"),

@@ -259,7 +259,40 @@
     }
   }
 
+  const organizerFields = new WeakMap();
+
+  function createOrganizerField(field, readonly) {
+    const organizer = window.CMCENEventOrganizer;
+    const wrapper = node("div");
+    const label = node("label", fieldLabel(field), "archive-staff-field");
+    const select = node("select");
+    select.dataset.path = field.path;
+    select.disabled = readonly;
+    for (const value of ["", ...organizer.presets, organizer.other]) {
+      const labelText = value === organizer.other
+        ? translate("event_organizing_entity_other")
+        : organizer.label(value, translate) || ui("Unassigned", "Non attribué");
+      const option = node("option", labelText);
+      option.value = value;
+      select.append(option);
+    }
+    label.append(select);
+
+    const custom = node("label", translate("event_organizing_entity_name"), "archive-staff-field");
+    custom.dataset.eventOrganizerCustom = "";
+    custom.hidden = true;
+    const input = node("input");
+    custom.append(input);
+    wrapper.append(label, custom);
+
+    const control = organizer.bind(select, input, custom, translate);
+    control.set(field.value);
+    organizerFields.set(select, control);
+    return wrapper;
+  }
+
   function createField(field, readonly) {
+    if (field.kind === "organizingEntity") return createOrganizerField(field, readonly);
     const label = node("label", fieldLabel(field), "archive-staff-field");
     label.dataset.kind = field.kind;
     let control;
@@ -563,7 +596,7 @@
         (element) => element.dataset.path === field.path,
       );
       if (!control) continue;
-      let value = control.value;
+      let value = organizerFields.get(control)?.value() ?? control.value;
       if (field.kind === "boolean") value = value === "true";
       if (["blocks", "json"].includes(field.kind)) value = JSON.parse(value);
       if (field.kind === "date")

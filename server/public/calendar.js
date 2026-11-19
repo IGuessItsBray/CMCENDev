@@ -124,7 +124,7 @@ function getRegionLabel(value) {
 }
 
 function getEntityLabel(value) {
-  return value ? getCalendarTranslation(`entity_${value}`) : "";
+  return window.CMCENEventOrganizer.label(value, getCalendarTranslation);
 }
 
 function getEventTypeLabel(value) {

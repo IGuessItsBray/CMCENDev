@@ -349,3 +349,7 @@ a:focus-visible {
   }
   .archive-staff-figure-languages { grid-template-columns: 1fr; }
 }
+
+[data-event-organizer-custom][hidden] {
+  display: none;
+}

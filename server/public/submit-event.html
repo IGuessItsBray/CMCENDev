@@ -412,7 +412,17 @@
                     <option value="museum" data-i18n="entity_museum">
                       C&amp;E Museum
                     </option>
+                    <option value="__other__" data-i18n="event_organizing_entity_other">
+                      Other
+                    </option>
                   </select>
+                </div>
+
+                <div class="event-field" id="eventCustomOrganizerField" data-event-organizer-custom hidden>
+                  <label for="eventCustomOrganizer" data-i18n="event_organizing_entity_name">
+                    Name of organizing entity
+                  </label>
+                  <input type="text" id="eventCustomOrganizer" maxlength="100" disabled />
                 </div>
 
                 <div class="event-field">
@@ -760,6 +770,7 @@
     <script src="/date-time-picker.js"></script>
     <script src="/validation-i18n.js"></script>
     <script src="/submission-profile.js"></script>
+    <script src="/event-organizer.js"></script>
     <script src="/submit-event.js"></script>
   </body>
 </html>

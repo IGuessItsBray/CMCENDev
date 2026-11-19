@@ -4,9 +4,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 const CMCENEventTime = require('../public/event-time-zone');
+const CMCENEventOrganizer = require('../public/event-organizer');
 
 function editor() {
-  const window = { CMCENEventTime };
+  const window = { CMCENEventTime, CMCENEventOrganizer };
   class FormData {
     constructor(form) {
       this.values = form.values;
@@ -83,4 +84,24 @@ test('all-day save preserves calendar dates and empty optional end dates', async
   );
   assert.equal(result.body.startDate, '2025-10-21T00:00:00.000Z');
   assert.equal(result.body.endDate, null);
+});
+
+
+test('staff editor saves a custom organizer, then ignores its text after returning to a preset', async () => {
+  const controller = editor();
+  const fields = { customOrganizingEntity: '  CAFCYBERCOM  ' };
+  const custom = await controller.getContentWorkspaceRecordSaveRequest(
+    item, form({ ...fields, organizingEntity: CMCENEventOrganizer.other }),
+  );
+  assert.equal(custom.body.organizingEntity, 'CAFCYBERCOM');
+  const preset = await controller.getContentWorkspaceRecordSaveRequest(
+    item, form({ ...fields, organizingEntity: 'museum' }),
+  );
+  assert.equal(preset.body.organizingEntity, 'museum');
+  await assert.rejects(
+    controller.getContentWorkspaceRecordSaveRequest(
+      item, form({ organizingEntity: CMCENEventOrganizer.other }),
+    ),
+    /Enter an organizing entity name/,
+  );
 });

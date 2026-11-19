@@ -868,7 +868,11 @@ of at most 370 days, and return published events that start in or overlap that
 range. Calls without those parameters retain the upcoming-events behaviour.
 Optional `eventType`, `organizingEntity`, and `provinceRegion` parameters use
 their published event-option values and are combined when more than one is
-supplied.
+supplied. The organizing-entity filter continues to offer the four presets.
+
+Event submissions and edits accept one of the four existing organizing-entity
+presets or a custom plain-text name of up to 100 characters. The saved name
+appears as entered on the event and calendar; the Other selector is not stored.
 
 Events can enable account-only RSVPs with `rsvpEnabled: true` and an optional
 `rsvpDeadline` in `YYYY-MM-DD` form. The deadline closes at the end of that

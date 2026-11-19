@@ -20,6 +20,12 @@ const eventSubmitButton = document.getElementById("eventSubmitButton");
 const eventTitleEn = document.getElementById("eventTitleEn");
 const eventTitleFr = document.getElementById("eventTitleFr");
 const eventTitleError = document.getElementById("eventTitleError");
+const eventOrganizer = window.CMCENEventOrganizer.bind(
+  document.getElementById("eventOrganizingEntity"),
+  document.getElementById("eventCustomOrganizer"),
+  document.getElementById("eventCustomOrganizerField"),
+  (key) => translate(key),
+);
 
 const eventAllDay = document.getElementById("eventAllDay");
 const eventRsvpEnabled = document.getElementById("eventRsvpEnabled");
@@ -320,7 +326,7 @@ function buildEventData() {
 
     provinceRegion: document.getElementById("eventProvinceRegion").value,
 
-    organizingEntity: document.getElementById("eventOrganizingEntity").value,
+    organizingEntity: eventOrganizer.value(),
 
     eventType: document.getElementById("eventType").value,
   };
@@ -328,6 +334,7 @@ function buildEventData() {
 
 function resetEventForm() {
   eventForm.reset();
+  eventOrganizer.sync();
   eventTitleError.hidden = true;
   syncEventTitleValidation();
   CMCENUtils.bindCharacterCounters();
@@ -730,7 +737,7 @@ function populateEventForm(event) {
   CMCENUtils.bindCharacterCounters();
   setEventField("eventCity", event.city);
   setEventField("eventProvinceRegion", event.provinceRegion);
-  setEventField("eventOrganizingEntity", event.organizingEntity);
+  eventOrganizer.set(event.organizingEntity);
   setEventField("eventType", event.eventType);
   setEventField("eventTimezone", event.timezone);
   setEventCheckbox("eventAllDay", event.allDay);
